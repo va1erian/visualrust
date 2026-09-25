@@ -1,9 +1,15 @@
-﻿//! VisualRust IDE shell
-//!
-//! Placeholder binary created by the workspace bootstrap (issue #1).
-#![cfg_attr(not(windows), allow(unused))]
+﻿//! Binary entry point for the VisualRust IDE shell.
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("vr-ide bootstrap placeholder");
-    Ok(())
+#[cfg(windows)]
+fn main() -> std::process::ExitCode {
+    match vr_ide::run() {
+        Ok(()) => std::process::ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("vr-ide: {error}");
+            std::process::ExitCode::FAILURE
+        }
+    }
 }
+
+#[cfg(not(windows))]
+fn main() {}
