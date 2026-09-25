@@ -8,6 +8,9 @@ repository.workspace = true
 [dependencies]
 # Typed, `#[from]`-friendly errors with `Display`, per AGENTS.md.
 thiserror.workspace = true
+# JSON responses need a serialiser; `serde` supplies the `Serialize` bound.
+serde.workspace = true
+serde_json.workspace = true
 # The Dyon binding lives in this crate; it needs Dyon's types and runtime to
 # register natives, compile handler modules and call them off-thread.
 dyon.workspace = true

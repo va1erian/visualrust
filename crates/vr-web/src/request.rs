@@ -2,8 +2,10 @@
 
 use std::collections::BTreeMap;
 
+use crate::cookie;
 use crate::headers::Headers;
 use crate::method::Method;
+use crate::multipart::{self, MultipartError, Part};
 
 /// A self-contained view of one incoming HTTP request.
 ///
@@ -53,5 +55,34 @@ impl Request {
     /// A route parameter captured by the matched pattern, or `None`.
     pub fn param(&self, name: &str) -> Option<&str> {
         self.params.get(name).map(String::as_str)
+    }
+
+    /// The raw `content-type` header, or `None`.
+    pub fn content_type(&self) -> Option<&str> {
+        self.headers.get("content-type")
+    }
+
+    /// The parsed `Cookie` header as `(name, value)` pairs.
+    pub fn cookies(&self) -> Vec<(String, String)> {
+        cookie::cookies_from(&self.headers)
+    }
+
+    /// One request cookie by name, or `None`.
+    pub fn cookie(&self, name: &str) -> Option<String> {
+        self.cookies()
+            .into_iter()
+            .find(|(cookie_name, _)| cookie_name == name)
+            .map(|(_, value)| value)
+    }
+
+    /// Parses `multipart/form-data` parts, rejecting a body over `max_bytes`.
+    pub fn multipart(&self, max_bytes: usize) -> Result<Vec<Part>, MultipartError> {
+        let content_type = self.content_type().ok_or(MultipartError::NotMultipart)?;
+        multipart::parse(&self.body, content_type, max_bytes)
+    }
+
+    /// The body decoded lossily as UTF-8, for text and form payloads.
+    pub fn body_text(&self) -> std::borrow::Cow<'_, str> {
+        String::from_utf8_lossy(&self.body)
     }
 }
