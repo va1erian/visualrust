@@ -942,6 +942,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "vr-pack"
+version = "0.0.0"
+dependencies = [
+ "flate2",
+ "sha2",
+ "thiserror",
+ "vr-core",
+]
+
+[[package]]
 name = "vr-runtime"
 version = "0.0.0"
 dependencies = [
