@@ -196,7 +196,7 @@ fn native_rset(rt: &mut Runtime) -> Result<Variable, String> {
 /// signatures. Several names (`trim`, `str`, `len`) also exist as Dyon
 /// built-ins; Dyon resolves a later registration first, so the PureBasic
 /// semantics win for a program that passed this `register`.
-pub fn register(module: &mut Module) {
+pub(crate) fn register(module: &mut Module) {
     module.add_str(
         "left",
         native_left,

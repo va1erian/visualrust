@@ -17,13 +17,23 @@
 //!     println(ucase(mid("VisualRust", 7, 4))) // RUST
 //! }
 //! ```
+//!
+//! # Encoding, regex and hashing
+//!
+//! [`encoding`] holds base64 and URL percent-encoding, [`regex`] match and
+//! replace, and [`hash`] the md5/sha1/sha256 digests plus HMAC-SHA256. They
+//! follow the same rule as the string library: typed `thiserror` errors, no
+//! panics, and every fallible command surfaces as a Dyon runtime error.
 
 #![forbid(unsafe_code)]
 
+pub mod encoding;
 pub mod error;
+pub mod hash;
+pub mod regex;
 pub mod strings;
 
 mod native;
 
-pub use error::StringError;
+pub use error::{EncodingError, HashError, RegexError, StringError};
 pub use native::register;
