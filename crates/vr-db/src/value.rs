@@ -52,26 +52,24 @@ impl DbValue {
     /// Renders the value for Dyon.
     ///
     /// `NULL` becomes an option so a script can tell it apart from `0` and `""`;
-    /// integers widen to Dyon's single `f64` number type.
+    /// integers widen to Dyon's single `f64` number type. Dyon has no byte-string
+    /// type, so a BLOB crosses as an array of whole numbers in `0..=255`.
     pub fn to_dyon(&self) -> Variable {
         match self {
             Self::Null => Variable::Option(None),
             Self::Integer(number) => Variable::f64(*number as f64),
             Self::Real(number) => Variable::f64(*number),
             Self::Text(text) => Variable::Str(Arc::new(text.clone())),
-            // Dyon has no byte-string type, so a lossy text view is the most it
-            // can carry; it matches what a script would print anyway.
-            Self::Blob(bytes) => {
-                Variable::Str(Arc::new(String::from_utf8_lossy(bytes).into_owned()))
-            }
+            Self::Blob(bytes) => blob_to_dyon(bytes),
         }
     }
 
     /// Reads one SQL parameter from a Dyon value.
     ///
     /// Dyon has a single number type, so a whole finite number binds as an
-    /// integer and everything else binds as a real; `none()` binds as `NULL` and
-    /// `some(x)` is unwrapped.
+    /// integer and everything else binds as a real; `none()` binds as `NULL`,
+    /// `some(x)` is unwrapped, and an array of whole numbers in `0..=255` binds
+    /// as a BLOB (the inverse of what [`DbValue::to_dyon`] emits).
     pub(crate) fn from_dyon(rt: &Runtime, variable: &Variable) -> Result<Self, DbError> {
         match rt.get(variable) {
             Variable::F64(number, _) if binds_as_integer(*number) => {
@@ -82,11 +80,46 @@ impl DbValue {
             Variable::Bool(value, _) => Ok(Self::Integer(i64::from(*value))),
             Variable::Option(None) => Ok(Self::Null),
             Variable::Option(Some(inner)) => Self::from_dyon(rt, inner),
+            Variable::Array(items) => read_blob(rt, items),
             other => Err(DbError::UnsupportedParameter(
                 other.typeof_var().to_string(),
             )),
         }
     }
+}
+
+/// Wraps bytes as Dyon's array type.
+///
+/// Dyon defines `Array` as `Arc<Vec<Variable>>` and `Variable` is not `Sync`, so
+/// clippy's non-`Send`/`Sync` warning is unavoidable when matching the Dyon API.
+#[allow(clippy::arc_with_non_send_sync)]
+fn blob_to_dyon(bytes: &[u8]) -> Variable {
+    Variable::Array(Arc::new(
+        bytes
+            .iter()
+            .map(|byte| Variable::f64(f64::from(*byte)))
+            .collect(),
+    ))
+}
+
+/// Converts a Dyon array into bytes, rejecting anything that is not a whole
+/// number in `0..=255` so a typo cannot silently truncate a blob.
+fn read_blob(rt: &Runtime, items: &dyon::Array) -> Result<DbValue, DbError> {
+    let mut bytes = Vec::with_capacity(items.len());
+    for item in items.iter() {
+        match rt.get(item) {
+            Variable::F64(number, _) if is_byte(*number) => bytes.push(*number as u8),
+            other => {
+                return Err(DbError::InvalidBlobElement(other.typeof_var().to_string()));
+            }
+        }
+    }
+    Ok(DbValue::Blob(bytes))
+}
+
+/// Whether a Dyon number is a byte value (`0..=255`, no fraction).
+fn is_byte(number: f64) -> bool {
+    number.is_finite() && number.fract() == 0.0 && (0.0..=255.0).contains(&number)
 }
 
 /// Whether a Dyon number is exactly representable as an SQLite integer.
