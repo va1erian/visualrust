@@ -7,4 +7,9 @@ repository.workspace = true
 
 [dependencies]
 win32ui.workspace = true
-vr-dyon = { path = '../../crates/vr-dyon' }
+vr-dyon.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+# Needed to register the recording native in the headless dispatch tests.
+dyon.workspace = true
