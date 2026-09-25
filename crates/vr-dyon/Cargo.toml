@@ -10,8 +10,6 @@ dyon.workspace = true
 thiserror.workspace = true
 # The `ui_*` bindings build a win32ui window entirely from Dyon; workspace pin.
 win32ui.workspace = true
-# The SQLite bindings register their own `*_database` natives from here.
-vr-db.workspace = true
 
 [build-dependencies]
 # Embeds the Common Controls v6 manifest into the test binaries; controls the

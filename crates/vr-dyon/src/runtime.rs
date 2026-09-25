@@ -16,12 +16,29 @@ pub struct DyonRuntime {
 }
 
 impl DyonRuntime {
-    /// Compiles `source`, registering the built-in native functions first.
+    /// Compiles `source`, registering only the built-in native functions.
     ///
-    /// `source_name` is only used to label diagnostics.
+    /// `source_name` is only used to label diagnostics. For a program that
+    /// needs extra native modules, use [`from_source_with`](Self::from_source_with).
     pub fn from_source(source_name: &str, source: &str) -> Result<Self, DyonError> {
+        Self::from_source_with(source_name, source, |_| {})
+    }
+
+    /// Compiles `source`, letting `register` add extra native modules first.
+    ///
+    /// The built-in natives are registered before `register` runs, and both
+    /// run before the source is loaded so Dyon's lifetime checker sees every
+    /// signature. This is the extension point that keeps optional modules out
+    /// of `vr-dyon`'s dependency graph: the crate that owns the natives passes
+    /// its own `register` function here.
+    pub fn from_source_with(
+        source_name: &str,
+        source: &str,
+        register: impl FnOnce(&mut Module),
+    ) -> Result<Self, DyonError> {
         let mut module = Module::new();
         native::register(&mut module);
+        register(&mut module);
         dyon::load_str(source_name, Arc::new(source.to_owned()), &mut module)
             .map_err(|message| DyonError::compile(source_name, message))?;
         Ok(Self {
