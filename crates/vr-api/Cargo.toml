@@ -6,3 +6,14 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+# Endpoints persist as `[[routes]]` in the project manifest; reusing the core
+# type keeps one source of truth instead of a parallel file format.
+vr-core.workspace = true
+# Typed, `#[from]`-friendly errors per AGENTS.md.
+thiserror.workspace = true
+# The OpenAPI-ish import/export is JSON; no schema crate is pulled in because
+# only a small, hand-mapped subset is round-tripped.
+serde_json.workspace = true
+
+[dev-dependencies]
+# Tests exercise the manifest load/save path, which is already a vr-core dep.

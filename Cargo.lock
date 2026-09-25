@@ -723,6 +723,11 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vr-api"
 version = "0.0.0"
+dependencies = [
+ "serde_json",
+ "thiserror",
+ "vr-core",
+]
 
 [[package]]
 name = "vr-core"
