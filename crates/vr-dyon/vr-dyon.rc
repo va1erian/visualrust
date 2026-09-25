@@ -1,0 +1,7 @@
+#include <winres.h>
+
+// Common Controls v6 + per-monitor-v2 DPI for vr-dyon's test binaries. The
+// `ui_*` bindings create win32ui controls, which need the v6 manifest just as
+// win32ui's own tests do; without it `InitCommonControlsEx` fails and no
+// control can be created.
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "vr-dyon.manifest"

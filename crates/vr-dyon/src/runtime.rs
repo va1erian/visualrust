@@ -44,8 +44,17 @@ impl DyonRuntime {
     }
 
     /// Runs the program's `main` function.
+    ///
+    /// A program that calls `ui_run` and cannot get a window on this session
+    /// fails with [`DyonError::NoWindow`] instead of a generic runtime error,
+    /// so a UI test can skip.
     pub fn run(&mut self) -> Result<(), DyonError> {
-        self.runtime.run(&self.module).map_err(DyonError::runtime)
+        crate::ui::reset_status();
+        let result = self.runtime.run(&self.module).map_err(DyonError::runtime);
+        if crate::ui::take_status() == crate::ui::UiStatus::NoWindow {
+            return Err(DyonError::NoWindow);
+        }
+        result
     }
 
     /// Calls a function by name without a return value.

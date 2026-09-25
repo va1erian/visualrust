@@ -38,6 +38,11 @@ pub enum DyonError {
         #[source]
         source: std::io::Error,
     },
+    /// The program asked for a window but this session cannot create one (a
+    /// headless CI runner, or Windows Sandbox without a desktop). Callers treat
+    /// this as a skip rather than a failure.
+    #[error("no interactive window could be created")]
+    NoWindow,
 }
 
 impl DyonError {
@@ -45,7 +50,7 @@ impl DyonError {
     pub fn position(&self) -> Option<SourcePosition> {
         match self {
             DyonError::Compile { position, .. } | DyonError::Runtime { position, .. } => *position,
-            DyonError::Io { .. } => None,
+            DyonError::Io { .. } | DyonError::NoWindow => None,
         }
     }
 
