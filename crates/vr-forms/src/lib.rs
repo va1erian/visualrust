@@ -1,4 +1,16 @@
-﻿//! Form model, designer, codegen
+#![forbid(unsafe_code)]
+//! Form model, designer, codegen.
 //!
-//! Placeholder crate created by the workspace bootstrap (issue #1).
-//! Real implementation arrives with its milestone issues.
+//! For now this crate owns the `.vrform` source of truth only: the [`model`]
+//! types, their JSON serialization, and [`ValidationError`] rules. The live
+//! designer and the Dyon code generator build on top of this model.
+
+mod error;
+pub mod model;
+mod validate;
+
+#[cfg(test)]
+mod tests;
+
+pub use error::{FormError, ValidationError};
+pub use model::{Anchor, Bounds, Control, ControlKind, Dip, Form, Orientation, ScrollBars, Size};
