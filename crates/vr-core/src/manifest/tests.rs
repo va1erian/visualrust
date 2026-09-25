@@ -24,12 +24,18 @@ fn web_manifest() -> Manifest {
                 method: HttpMethod::Get,
                 path: "/".to_owned(),
                 handler: "index".to_owned(),
+                description: None,
+                params: Vec::new(),
+                response: None,
             },
             Route {
                 name: "create".to_owned(),
                 method: HttpMethod::Post,
                 path: "/todos".to_owned(),
                 handler: "create".to_owned(),
+                description: None,
+                params: Vec::new(),
+                response: None,
             },
         ],
         db: Some(DbConfig {
@@ -130,6 +136,9 @@ fn duplicate_route_endpoints_are_reported() {
         method: HttpMethod::Get,
         path: "/".to_owned(),
         handler: "index_again".to_owned(),
+        description: None,
+        params: Vec::new(),
+        response: None,
     });
     assert!(matches!(
         manifest.validate(),

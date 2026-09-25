@@ -11,7 +11,10 @@ mod validate;
 mod tests;
 
 pub use error::{ManifestError, ValidationError};
-pub use model::{DbConfig, HttpMethod, Manifest, NamedPath, Project, ProjectKind, Route};
+pub use model::{
+    DbConfig, HttpMethod, Manifest, NamedPath, ParamLocation, Project, ProjectKind, Route,
+    RouteParam, SampleResponse,
+};
 
 use std::path::Path;
 
