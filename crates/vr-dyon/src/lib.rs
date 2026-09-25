@@ -21,6 +21,7 @@
 pub mod error;
 mod native;
 mod runtime;
+#[cfg(feature = "ui")]
 mod ui;
 
 pub use error::{DyonError, SourcePosition};

@@ -1,3 +1,7 @@
+// The window test belongs to the `ui` feature; without it there are no `ui_*`
+// bindings to exercise.
+#![cfg(feature = "ui")]
+
 //! Integration test: a complete window built entirely from a Dyon script.
 //!
 //! The script calls `ui_window` / `ui_column` / `ui_label` / `ui_run`, so this

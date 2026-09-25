@@ -8,3 +8,10 @@ repository.workspace = true
 [dependencies]
 # Typed, `#[from]`-friendly errors with `Display`, per AGENTS.md.
 thiserror.workspace = true
+# The Dyon binding lives in this crate; it needs Dyon's types and runtime to
+# register natives, compile handler modules and call them off-thread.
+dyon.workspace = true
+# Written out rather than `workspace = true`: Cargo forbids a member from
+# turning off the workspace's default features, and `default-features = false`
+# is what keeps the win32ui `ui` bindings out of a headless web server.
+vr-dyon = { path = "../vr-dyon", default-features = false }
