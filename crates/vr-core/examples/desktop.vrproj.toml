@@ -1,0 +1,22 @@
+[project]
+name = "notes"
+version = "0.1.0"
+type = "desktop"
+entry = "src/main.dyon"
+description = "Small desktop notes app"
+
+[[forms]]
+name = "main"
+path = "forms/main.vrform"
+
+[[forms]]
+name = "about"
+path = "forms/about.vrform"
+
+[[modules]]
+name = "storage"
+path = "src/storage.dyon"
+
+[[assets]]
+name = "icon"
+path = "assets/notes.ico"

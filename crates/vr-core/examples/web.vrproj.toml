@@ -1,0 +1,31 @@
+[project]
+name = "todo-web"
+version = "0.1.0"
+type = "web"
+entry = "src/main.dyon"
+description = "HTTP todo list with a SQLite store"
+
+[db]
+path = "data/todos.db"
+
+[[modules]]
+name = "handlers"
+path = "src/handlers.dyon"
+
+[[routes]]
+name = "index"
+method = "GET"
+path = "/"
+handler = "index"
+
+[[routes]]
+name = "list"
+method = "GET"
+path = "/todos"
+handler = "list_todos"
+
+[[routes]]
+name = "create"
+method = "POST"
+path = "/todos"
+handler = "create_todo"
