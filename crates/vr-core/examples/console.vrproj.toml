@@ -1,0 +1,9 @@
+[project]
+name = "hello-console"
+version = "0.1.0"
+type = "console"
+entry = "src/main.dyon"
+
+[[modules]]
+name = "args"
+path = "src/args.dyon"
