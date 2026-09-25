@@ -29,5 +29,6 @@ pub(crate) fn register(module: &mut Module) {
         vr_native_echo,
         Dfn::nl(vec![Type::Str], Type::Str),
     );
+    #[cfg(feature = "ui")]
     crate::ui::register(module);
 }

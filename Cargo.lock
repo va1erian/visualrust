@@ -829,7 +829,9 @@ dependencies = [
 name = "vr-web"
 version = "0.0.0"
 dependencies = [
+ "dyon",
  "thiserror",
+ "vr-dyon",
 ]
 
 [[package]]

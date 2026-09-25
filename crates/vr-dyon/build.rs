@@ -3,6 +3,12 @@
 //! controls, and without the manifest `InitCommonControlsEx` fails.
 
 fn main() {
+    // The manifest only matters for the `ui_*` test binaries; a build with the
+    // `ui` feature off has no controls to register and must not pull the
+    // resource compiler into a headless (web-only) dependency graph.
+    if std::env::var("CARGO_FEATURE_UI").is_err() {
+        return;
+    }
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }

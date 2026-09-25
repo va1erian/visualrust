@@ -66,12 +66,21 @@ impl DyonRuntime {
     /// fails with [`DyonError::NoWindow`] instead of a generic runtime error,
     /// so a UI test can skip.
     pub fn run(&mut self) -> Result<(), DyonError> {
-        crate::ui::reset_status();
-        let result = self.runtime.run(&self.module).map_err(DyonError::runtime);
-        if crate::ui::take_status() == crate::ui::UiStatus::NoWindow {
-            return Err(DyonError::NoWindow);
+        // Without the `ui` feature there is no window loop to observe, so the
+        // NoWindow classification is compiled out entirely.
+        #[cfg(feature = "ui")]
+        {
+            crate::ui::reset_status();
+            let result = self.runtime.run(&self.module).map_err(DyonError::runtime);
+            if crate::ui::take_status() == crate::ui::UiStatus::NoWindow {
+                return Err(DyonError::NoWindow);
+            }
+            result
         }
-        result
+        #[cfg(not(feature = "ui"))]
+        {
+            self.runtime.run(&self.module).map_err(DyonError::runtime)
+        }
     }
 
     /// Calls a function by name without a return value.
