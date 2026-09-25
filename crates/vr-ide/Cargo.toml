@@ -4,6 +4,20 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+build = "build.rs"
 
 [dependencies]
+# Typed error for the binary's top-level `run`.
+thiserror.workspace = true
+# The IDE window, its controls and its menus are all win32ui widgets; workspace pin.
+win32ui.workspace = true
 
+[build-dependencies]
+# Embeds the Common Controls v6 + DPI manifest into the binary and test
+# binaries, the same way win32ui and vr-dyon do; without it the toolbar and
+# status bar (real common-controls children) cannot be created.
+embed-resource = "3"
+
+[dev-dependencies]
+# The smoke test captures the live shell through the shared harness.
+vr-tooling = { path = "../vr-tooling" }

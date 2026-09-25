@@ -629,6 +629,12 @@ version = "0.0.0"
 [[package]]
 name = "vr-ide"
 version = "0.0.0"
+dependencies = [
+ "embed-resource",
+ "thiserror",
+ "vr-tooling",
+ "win32ui",
+]
 
 [[package]]
 name = "vr-runtime"
