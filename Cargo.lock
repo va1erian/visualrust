@@ -647,6 +647,10 @@ version = "0.0.0"
 [[package]]
 name = "vr-scintilla-sys"
 version = "0.0.0"
+dependencies = [
+ "cc",
+ "windows",
+]
 
 [[package]]
 name = "vr-std"
