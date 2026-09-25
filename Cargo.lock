@@ -750,7 +750,6 @@ dependencies = [
  "dyon",
  "embed-resource",
  "thiserror",
- "vr-db",
  "vr-tooling",
  "win32ui",
 ]

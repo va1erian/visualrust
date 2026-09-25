@@ -39,7 +39,7 @@ fn main() {{}}
 "#
     );
 
-    let mut runtime = DyonRuntime::from_source("db_end_to_end.dyon", &source)
+    let mut runtime = DyonRuntime::from_source_with("db_end_to_end.dyon", &source, vr_db::register)
         .expect("program compiles with the native signatures");
     let result: f64 = runtime.call_ret("run", &[]).expect("script runs");
 
@@ -54,7 +54,8 @@ fn run() -> str {
 }
 fn main() {}
 "#;
-    let mut runtime = DyonRuntime::from_source("escape.dyon", source).expect("program compiles");
+    let mut runtime = DyonRuntime::from_source_with("escape.dyon", source, vr_db::register)
+        .expect("program compiles");
     let escaped: String = runtime.call_ret("run", &[]).expect("script runs");
     assert_eq!(escaped, "O''Brien");
 }

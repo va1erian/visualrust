@@ -7,9 +7,9 @@
 //!   `database_next_row` / `database_column` pair is just cursor movement.
 //! * [`register`] adds the PureBasic-style natives (`open_database`,
 //!   `database_query`, `database_exec`, `database_next_row`, `database_column`
-//!   and `escape_string`) to a Dyon module. [`vr-dyon`](https://docs.rs/vr-dyon)
-//!   calls it while building its module, so a Dyon program gets the commands
-//!   without naming this crate.
+//!   and `escape_string`) to a Dyon module. A caller passes it to
+//!   `DyonRuntime::from_source_with`, so a Dyon program gets the commands
+//!   without `vr-dyon` depending on this crate.
 //!
 //! Handles are Dyon custom objects (`Arc<Mutex<Database>>`) exactly as the UI
 //! bindings are, which is why the native functions take the handle by reference
