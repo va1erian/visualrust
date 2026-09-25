@@ -1,7 +1,8 @@
 //! Native functions exposed to Dyon programs.
 //!
-//! This is the seam `ui_*` bindings will plug into; the two functions here
-//! exist to prove registration and value round-tripping work end to end.
+//! The `vr_native_*` helpers prove registration and value round-tripping work
+//! end to end; the `ui_*` bindings live in [`crate::ui`] and are registered
+//! from here.
 
 use dyon::{Dfn, Module, Type, dyon_fn, dyon_fn_pop, dyon_macro_items};
 
@@ -28,4 +29,5 @@ pub(crate) fn register(module: &mut Module) {
         vr_native_echo,
         Dfn::nl(vec![Type::Str], Type::Str),
     );
+    crate::ui::register(module);
 }

@@ -612,7 +612,10 @@ name = "vr-dyon"
 version = "0.0.0"
 dependencies = [
  "dyon",
+ "embed-resource",
  "thiserror",
+ "vr-tooling",
+ "win32ui",
 ]
 
 [[package]]
