@@ -1,0 +1,21 @@
+[package]
+name = "vr-pack"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# The manifest is the bundle's root record, so packaging reuses the same type
+# and validation the rest of the IDE uses instead of a parallel format.
+vr-core.workspace = true
+# Pure-Rust deflate; see the workspace comment for why zstd was not chosen.
+flate2.workspace = true
+# The integrity hash is SHA-256, already pinned for vr-std's hashing module.
+sha2.workspace = true
+# Typed, `#[from]`-friendly errors per AGENTS.md.
+thiserror.workspace = true
+
+[dev-dependencies]
+# Tests build bundles from the real manifest type, matching production shape.
+vr-core.workspace = true
