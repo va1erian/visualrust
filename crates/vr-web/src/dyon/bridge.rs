@@ -205,6 +205,22 @@ impl WebRuntime {
         })
     }
 
+    /// Compiles and runs `source` with the web natives **and** the SQLite
+    /// natives from `vr-db`, so a handler can call `open_database`,
+    /// `database_query` and the rest of the family.
+    ///
+    /// A database handle is a shared Dyon custom object (`Arc<Mutex<..>>`), so
+    /// passing it from one native call to the next inside a handler works as
+    /// in a desktop script. Handler calls still run one at a time on the
+    /// runtime thread, so two requests never touch the same handle at once; a
+    /// slow query blocks that thread — and every other request — for its
+    /// duration. That head-of-line blocking is acceptable while handlers are
+    /// expected to be quick, and is the price of keeping Dyon single-threaded.
+    #[cfg(feature = "sqlite")]
+    pub fn start_with_sqlite(source_name: &str, source: &str) -> Result<Self, BridgeError> {
+        Self::start_with(source_name, source, ::vr_db::register)
+    }
+
     /// The address the Dyon program bound.
     pub fn local_addr(&self) -> SocketAddr {
         self.addr

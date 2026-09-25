@@ -746,6 +746,7 @@ dependencies = [
  "rusqlite",
  "thiserror",
  "vr-dyon",
+ "vr-web",
 ]
 
 [[package]]
@@ -843,6 +844,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "vr-db",
  "vr-dyon",
 ]
 
