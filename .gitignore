@@ -4,3 +4,4 @@
 *.pdb
 *.dSYM
 .golden-tmp/
+.cargo-target
