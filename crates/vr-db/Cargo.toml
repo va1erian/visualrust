@@ -6,3 +6,12 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+# Bundled SQLite is the whole point of the crate; see the workspace comment.
+rusqlite.workspace = true
+thiserror.workspace = true
+# The bindings are Dyon natives, so the same crate also owns their signatures.
+dyon.workspace = true
+
+[dev-dependencies]
+# The end-to-end test runs a Dyon script through the shared runtime.
+vr-dyon.workspace = true
