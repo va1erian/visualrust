@@ -1,4 +1,4 @@
-﻿//! A small, blocking, message-oriented HTTP/1.1 server core.
+//! A small, blocking, message-oriented HTTP/1.1 server core.
 //!
 //! The crate turns each incoming request into a [`Request`] message and hands it
 //! to a handler registered under a name. Routing and handler storage are kept
@@ -27,23 +27,31 @@
 
 #![forbid(unsafe_code)]
 
+mod cookie;
 pub mod dyon;
 mod handler;
 mod headers;
 mod method;
+mod multipart;
 mod parse;
 mod request;
 mod response;
 mod router;
 mod server;
+mod session;
+mod static_files;
 
 pub use dyon::{BridgeError, DyonResponseError, WebRuntime};
 
+pub use cookie::{Cookie, CookieError, SameSite, parse_cookie_header};
 pub use handler::{Handler, HandlerRegistry};
 pub use headers::Headers;
 pub use method::Method;
+pub use multipart::{MultipartError, Part, parse as parse_multipart};
 pub use parse::{ParseError, ParseLimits, parse_request};
 pub use request::Request;
 pub use response::{Response, StatusCode};
 pub use router::{Resolution, RouteMatch, Router, RouterError};
 pub use server::{Server, ServerError, Shutdown};
+pub use session::{SESSION_COOKIE, Session, SessionStore};
+pub use static_files::static_files;

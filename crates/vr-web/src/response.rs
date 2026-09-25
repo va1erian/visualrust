@@ -2,6 +2,7 @@
 
 use std::fmt::{self, Write as _};
 
+use crate::cookie::Cookie;
 use crate::headers::Headers;
 
 /// An HTTP status code.
@@ -17,6 +18,12 @@ impl StatusCode {
     pub const OK: Self = Self(200);
     /// `204 No Content`.
     pub const NO_CONTENT: Self = Self(204);
+    /// `301 Moved Permanently`.
+    pub const MOVED_PERMANENTLY: Self = Self(301);
+    /// `302 Found`, the default for [`Response::redirect`].
+    pub const FOUND: Self = Self(302);
+    /// `303 See Other`.
+    pub const SEE_OTHER: Self = Self(303);
     /// `400 Bad Request`.
     pub const BAD_REQUEST: Self = Self(400);
     /// `404 Not Found`.
@@ -46,6 +53,9 @@ impl StatusCode {
         match self.0 {
             200 => "OK",
             204 => "No Content",
+            301 => "Moved Permanently",
+            302 => "Found",
+            303 => "See Other",
             400 => "Bad Request",
             404 => "Not Found",
             405 => "Method Not Allowed",
@@ -70,8 +80,10 @@ pub struct Response {
     pub status: StatusCode,
     /// Response headers; `content-length` and `connection` are added on write.
     pub headers: Headers,
-    /// Response body bytes.
+    /// Body bytes.
     pub body: Vec<u8>,
+    /// Cookies to emit as repeated `set-cookie` headers.
+    pub cookies: Vec<Cookie>,
 }
 
 impl Response {
@@ -81,6 +93,7 @@ impl Response {
             status,
             headers: Headers::new(),
             body: Vec::new(),
+            cookies: Vec::new(),
         }
     }
 
@@ -94,6 +107,56 @@ impl Response {
         response
     }
 
+    /// A `text/html` response.
+    pub fn html(status: StatusCode, body: impl Into<String>) -> Self {
+        let mut response = Self::new(status);
+        response
+            .headers
+            .insert("content-type", "text/html; charset=utf-8");
+        response.body = body.into().into_bytes();
+        response
+    }
+
+    /// A JSON response. Serialisation failure becomes a `500` rather than a
+    /// panic, so a value with a bad `Serialize` impl cannot take a worker down.
+    pub fn json<T: serde::Serialize>(status: StatusCode, value: &T) -> Self {
+        match serde_json::to_vec(value) {
+            Ok(body) => {
+                let mut response = Self::new(status);
+                response.headers.insert("content-type", "application/json");
+                response.body = body;
+                response
+            }
+            Err(_) => Self::text(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "failed to serialise the JSON response",
+            ),
+        }
+    }
+
+    /// A response of arbitrary bytes under a caller-supplied content type.
+    pub fn bytes(
+        status: StatusCode,
+        content_type: impl Into<String>,
+        body: impl Into<Vec<u8>>,
+    ) -> Self {
+        let mut response = Self::new(status);
+        response.headers.insert("content-type", content_type);
+        response.body = body.into();
+        response
+    }
+
+    /// A `302 Found` redirect to `location`.
+    pub fn redirect(location: impl Into<String>) -> Self {
+        Self::new(StatusCode::FOUND).with_header("location", location)
+    }
+
+    /// Replaces the status, returning `self` for chaining.
+    pub fn with_status(mut self, status: StatusCode) -> Self {
+        self.status = status;
+        self
+    }
+
     /// Adds or replaces a header, returning `self` for chaining.
     pub fn with_header(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
         self.headers.insert(name, value);
@@ -103,6 +166,12 @@ impl Response {
     /// Replaces the body, returning `self` for chaining.
     pub fn with_body(mut self, body: impl Into<Vec<u8>>) -> Self {
         self.body = body.into();
+        self
+    }
+
+    /// Adds a `set-cookie` header, returning `self` for chaining.
+    pub fn with_cookie(mut self, cookie: Cookie) -> Self {
+        self.cookies.push(cookie);
         self
     }
 
@@ -125,6 +194,13 @@ impl Response {
             head.push_str(value);
             head.push_str("\r\n");
         }
+        // Cookies are emitted separately because `Headers` keeps one entry per
+        // name, while a response may legitimately set several cookies.
+        for cookie in &self.cookies {
+            head.push_str("set-cookie: ");
+            head.push_str(&cookie.to_set_cookie());
+            head.push_str("\r\n");
+        }
         if self.headers.get("content-length").is_none() {
             head.push_str("content-length: ");
             head.push_str(&self.body.len().to_string());
@@ -141,6 +217,7 @@ impl Response {
 #[cfg(test)]
 mod tests {
     use super::{Response, StatusCode};
+    use crate::cookie::Cookie;
 
     #[test]
     fn text_sets_content_type_and_length() {
@@ -159,5 +236,47 @@ mod tests {
             .to_http();
         let text = String::from_utf8(bytes).expect("utf8");
         assert_eq!(text.matches("content-length").count(), 1);
+    }
+
+    #[test]
+    fn json_serialises_and_sets_the_content_type() {
+        let value = serde_json::json!({"name": "ada", "id": 7});
+        let response = Response::json(StatusCode::OK, &value);
+        assert_eq!(
+            response.headers.get("content-type"),
+            Some("application/json")
+        );
+        assert_eq!(response.body, br#"{"id":7,"name":"ada"}"#);
+    }
+
+    #[test]
+    fn redirect_sets_the_location_and_status() {
+        let response = Response::redirect("/login");
+        assert_eq!(response.status, StatusCode::FOUND);
+        assert_eq!(response.headers.get("location"), Some("/login"));
+    }
+
+    #[test]
+    fn html_and_bytes_set_their_content_types() {
+        assert_eq!(
+            Response::html(StatusCode::OK, "<p>")
+                .headers
+                .get("content-type"),
+            Some("text/html; charset=utf-8")
+        );
+        assert_eq!(
+            Response::bytes(StatusCode::OK, "image/png", vec![1, 2])
+                .headers
+                .get("content-type"),
+            Some("image/png")
+        );
+    }
+
+    #[test]
+    fn emits_one_set_cookie_header_per_cookie() {
+        let cookie = Cookie::new("a", "1").expect("cookie").path("/");
+        let response = Response::new(StatusCode::OK).with_cookie(cookie);
+        let text = String::from_utf8(response.to_http()).expect("utf8");
+        assert!(text.contains("set-cookie: a=1; Path=/\r\n"), "{text}");
     }
 }
