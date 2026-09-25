@@ -9,6 +9,16 @@ repository.workspace = true
 # The stdlib exposes Dyon natives, so it owns their signatures.
 dyon.workspace = true
 thiserror.workspace = true
+# Encoders and digests; kept here rather than in vr-dyon so the runtime stays
+# free of the stdlib's dependencies.
+base64.workspace = true
+percent-encoding.workspace = true
+regex.workspace = true
+md-5.workspace = true
+sha1.workspace = true
+sha2.workspace = true
+hmac.workspace = true
+hex.workspace = true
 
 [dev-dependencies]
 # The end-to-end test drives the natives through the shared runtime; keeping it

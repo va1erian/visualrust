@@ -44,3 +44,15 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = "0.8"
 thiserror = "2"
+
+# vr-std encoding/hashing deps. base64/percent-encoding cover the encoders,
+# regex the pattern commands, and the RustCrypto stack (md-5, sha1, sha2, hmac)
+# plus `hex` the digests; all are pure Rust so the Windows build stays clean.
+base64 = "0.22"
+percent-encoding = "2"
+regex = "1"
+md-5 = "0.10"
+sha1 = "0.10"
+sha2 = "0.10"
+hmac = "0.12"
+hex = "0.4"
