@@ -6,3 +6,11 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+# The stdlib exposes Dyon natives, so it owns their signatures.
+dyon.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+# The end-to-end test drives the natives through the shared runtime; keeping it
+# a dev-dependency is what stops vr-std from depending on vr-dyon at runtime.
+vr-dyon.workspace = true

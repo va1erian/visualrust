@@ -810,6 +810,11 @@ dependencies = [
 [[package]]
 name = "vr-std"
 version = "0.0.0"
+dependencies = [
+ "dyon",
+ "thiserror",
+ "vr-dyon",
+]
 
 [[package]]
 name = "vr-syntax"
