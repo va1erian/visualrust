@@ -18,3 +18,11 @@ dyon.workspace = true
 # turning off the workspace's default features, and `default-features = false`
 # is what keeps the win32ui `ui` bindings out of a headless web server.
 vr-dyon = { path = "../vr-dyon", default-features = false }
+# Optional so the default web build stays free of bundled SQLite. The `sqlite`
+# feature below turns it on and exposes `WebRuntime::start_with_sqlite`, which
+# registers `vr-db`'s natives next to the web ones.
+vr-db = { path = "../vr-db", optional = true }
+
+[features]
+# A web handler wants `open_database` / `database_query`; this pulls `vr-db` in.
+sqlite = ["dep:vr-db"]

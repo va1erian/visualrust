@@ -15,3 +15,7 @@ dyon.workspace = true
 [dev-dependencies]
 # The end-to-end test runs a Dyon script through the shared runtime.
 vr-dyon.workspace = true
+# The web+DB bridge test drives the real HTTP server, so `vr-web` is a dev-only
+# dependency; enabling its `sqlite` feature does not affect `vr-web`'s own
+# default build or `cargo tree -p vr-web -e no-dev`.
+vr-web = { path = "../vr-web", features = ["sqlite"] }
