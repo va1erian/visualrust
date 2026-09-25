@@ -1,0 +1,94 @@
+// A tiny JSON note store: POST creates a row, GET reads it back.
+//
+// Every request is dispatched by name through the message-based web runtime, so
+// each handler below is a plain Dyon function that opens its own SQLite
+// connection with `open_database`. The runtime serialises handler calls on one
+// thread, so a handler never races another; a slow query does stall the queue.
+
+// Resolved at startup. The end-to-end test swaps this literal for a temp file
+// so the smoke test never touches real data.
+fn database_path() -> str {
+    return "web-api.sqlite"
+}
+
+fn index(req: {}) -> {} {
+    return {status: 200, body: "{\"service\":\"visualrust-web-api\"}", content_type: "application/json"}
+}
+
+fn create_note(req: {}) -> {} {
+    body := req.body
+    if body == "" {
+        return {status: 400, body: "{\"error\":\"empty body\"}", content_type: "application/json"}
+    }
+
+    db := open_database(database_path())
+    affected := database_exec(db, "INSERT INTO notes (body) VALUES (?)", [body])
+    if affected < 1 {
+        return {status: 500, body: "{\"error\":\"insert failed\"}", content_type: "application/json"}
+    }
+
+    id := "0"
+    rows := database_query(db, "SELECT last_insert_rowid()", [])
+    if rows > 0 {
+        if database_next_row(db) {
+            id = str(database_column(db, 0))
+        }
+    }
+
+    created := "{\"id\": " + id + ", \"body\": " + json_string(body) + "}"
+    return {status: 201, body: clone(created), content_type: "application/json"}
+}
+
+fn list_notes(req: {}) -> {} {
+    db := open_database(database_path())
+    rows := database_query(db, "SELECT id, body FROM notes ORDER BY id", [])
+
+    payload := "["
+    first := true
+    for i rows {
+        if database_next_row(db) {
+            if !first {
+                payload += ", "
+            }
+            first = false
+            payload += "{\"id\": " + str(database_column(db, 0)) + ", \"body\": " + json_string(database_column(db, 1)) + "}"
+        }
+    }
+    payload += "]"
+    return {status: 200, body: clone(payload), content_type: "application/json"}
+}
+
+fn show_note(req: {}) -> {} {
+    db := open_database(database_path())
+    rows := database_query(
+        db,
+        "SELECT id, body FROM notes WHERE id = CAST(? AS INTEGER)",
+        [req.params.id],
+    )
+
+    found := ""
+    if rows > 0 {
+        if database_next_row(db) {
+            found = "{\"id\": " + str(database_column(db, 0)) + ", \"body\": " + json_string(database_column(db, 1)) + "}"
+        }
+    }
+    if found == "" {
+        return {status: 404, body: "{\"error\":\"not found\"}", content_type: "application/json"}
+    }
+    return {status: 200, body: clone(found), content_type: "application/json"}
+}
+
+fn main() {
+    db := open_database(database_path())
+    schema := database_exec(db, "CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY AUTOINCREMENT, body TEXT NOT NULL)", [])
+    if schema < 0 {
+        print("schema creation failed")
+    }
+
+    server := server_new()
+    server_route(server, "GET", "/", "index")
+    server_route(server, "POST", "/notes", "create_note")
+    server_route(server, "GET", "/notes", "list_notes")
+    server_route(server, "GET", "/notes/:id", "show_note")
+    server_start(server)
+}

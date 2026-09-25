@@ -26,3 +26,8 @@ vr-db = { path = "../vr-db", optional = true }
 [features]
 # A web handler wants `open_database` / `database_query`; this pulls `vr-db` in.
 sqlite = ["dep:vr-db"]
+
+[dev-dependencies]
+# The web-api sample smoke test loads `vrproj.toml` through the shared manifest
+# model, so the sample manifest stays the single source of truth for its routes.
+vr-core.workspace = true

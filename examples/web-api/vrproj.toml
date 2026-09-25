@@ -1,0 +1,33 @@
+[project]
+name = "web-api"
+version = "0.1.0"
+type = "web"
+entry = "src/main.dyon"
+description = "JSON REST API backed by SQLite, dispatched through the Dyon web runtime"
+
+[db]
+path = "web-api.sqlite"
+
+[[routes]]
+name = "index"
+method = "GET"
+path = "/"
+handler = "index"
+
+[[routes]]
+name = "create-note"
+method = "POST"
+path = "/notes"
+handler = "create_note"
+
+[[routes]]
+name = "list-notes"
+method = "GET"
+path = "/notes"
+handler = "list_notes"
+
+[[routes]]
+name = "show-note"
+method = "GET"
+path = "/notes/:id"
+handler = "show_note"
