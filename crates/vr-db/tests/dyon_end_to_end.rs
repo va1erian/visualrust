@@ -47,6 +47,40 @@ fn main() {{}}
 }
 
 #[test]
+fn dyon_controls_transactions_and_writes_blobs() {
+    let temp = TempDb::new("dyon-tx");
+    let path = temp.path().to_string_lossy().replace('\\', "/");
+    let source = format!(
+        r#"
+fn run() -> f64 {{
+    db := open_database("{path}")
+    created := database_exec(db, "CREATE TABLE t (id INTEGER, data BLOB)", [])
+
+    opened := database_begin(db)
+    inserted := database_exec(db, "INSERT INTO t VALUES (?, ?)", [1, [1, 2, 3]])
+    discarded := database_rollback(db)
+    rolled := 0
+    if database_query(db, "SELECT id FROM t", []) == 0 {{ rolled = 1 }}
+
+    reopened := database_begin(db)
+    kept := database_exec(db, "INSERT INTO t VALUES (?, ?)", [2, [4, 5, 6]])
+    saved := database_commit(db)
+    committed := 0
+    if database_query(db, "SELECT id FROM t", []) == 1 {{ committed = 1 }}
+
+    return rolled * 10 + committed
+}}
+fn main() {{}}
+"#
+    );
+
+    let mut runtime = DyonRuntime::from_source_with("db_tx.dyon", &source, vr_db::register)
+        .expect("program compiles with the transaction natives");
+    let result: f64 = runtime.call_ret("run", &[]).expect("script runs");
+    assert_eq!(result, 11.0, "the rollback left no row and the commit did");
+}
+
+#[test]
 fn escaping_a_quote_can_be_called_from_dyon() {
     let source = r#"
 fn run() -> str {

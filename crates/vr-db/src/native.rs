@@ -49,6 +49,33 @@ pub fn register(module: &mut Module) {
         ),
     );
     module.add_str(
+        "database_exec_many",
+        database_exec_many,
+        Dfn::nl(
+            vec![
+                database.clone(),
+                Type::Str,
+                Type::Array(Box::new(Type::Any)),
+            ],
+            Type::F64,
+        ),
+    );
+    module.add_str(
+        "database_begin",
+        database_begin,
+        Dfn::nl(vec![database.clone()], Type::Bool),
+    );
+    module.add_str(
+        "database_commit",
+        database_commit,
+        Dfn::nl(vec![database.clone()], Type::Bool),
+    );
+    module.add_str(
+        "database_rollback",
+        database_rollback,
+        Dfn::nl(vec![database.clone()], Type::Bool),
+    );
+    module.add_str(
         "database_next_row",
         database_next_row,
         Dfn::nl(vec![database.clone()], Type::Bool),
@@ -99,6 +126,35 @@ fn database_exec(rt: &mut Runtime) -> Result<Variable, String> {
     Ok(Variable::f64(affected as f64))
 }
 
+fn database_exec_many(rt: &mut Runtime) -> Result<Variable, String> {
+    let raw: Variable = rt.pop()?;
+    let sql: String = rt.pop()?;
+    let object: RustObject = rt.pop()?;
+    let parameter_sets = read_parameter_sets(rt, &raw)?;
+    let affected = database_mut(&object, |database| {
+        database.exec_many(&sql, &parameter_sets)
+    })?;
+    Ok(Variable::f64(affected as f64))
+}
+
+fn database_begin(rt: &mut Runtime) -> Result<Variable, String> {
+    let object: RustObject = rt.pop()?;
+    database_mut(&object, |database| database.begin())?;
+    Ok(Variable::bool(true))
+}
+
+fn database_commit(rt: &mut Runtime) -> Result<Variable, String> {
+    let object: RustObject = rt.pop()?;
+    database_mut(&object, |database| database.commit())?;
+    Ok(Variable::bool(true))
+}
+
+fn database_rollback(rt: &mut Runtime) -> Result<Variable, String> {
+    let object: RustObject = rt.pop()?;
+    database_mut(&object, |database| database.rollback())?;
+    Ok(Variable::bool(true))
+}
+
 fn database_next_row(rt: &mut Runtime) -> Result<Variable, String> {
     let object: RustObject = rt.pop()?;
     let advanced = database_mut(&object, |database| Ok(database.next_row()))?;
@@ -127,6 +183,26 @@ fn read_parameters(rt: &Runtime, variable: &Variable) -> Result<Vec<DbValue>, St
     items
         .iter()
         .map(|item| DbValue::from_dyon(rt, item).map_err(dyon_error))
+        .collect()
+}
+
+/// Reads an array of parameter arrays, as `database_exec_many` expects.
+fn read_parameter_sets(rt: &Runtime, variable: &Variable) -> Result<Vec<Vec<DbValue>>, String> {
+    let resolved = rt.get(variable);
+    let Variable::Array(sets) = resolved else {
+        return Err(DbError::NotAnArray(resolved.typeof_var().to_string()).to_string());
+    };
+    sets.iter()
+        .map(|set| {
+            let resolved = rt.get(set);
+            let Variable::Array(parameters) = resolved else {
+                return Err(DbError::NotAnArray(resolved.typeof_var().to_string()).to_string());
+            };
+            parameters
+                .iter()
+                .map(|parameter| DbValue::from_dyon(rt, parameter).map_err(dyon_error))
+                .collect()
+        })
         .collect()
 }
 
