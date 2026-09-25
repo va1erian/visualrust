@@ -28,7 +28,12 @@ rust-version = "1.90"
 # win32ui is pre-1.0 and moves quickly: always pin a rev, never a branch.
 win32ui = { git = "https://github.com/va1erian/win32ui", rev = "01d1778caa5c35edc44dabb8002781670580b17e" }
 vr-core = { path = "crates/vr-core" }
+vr-db = { path = "crates/vr-db" }
 vr-dyon = { path = "crates/vr-dyon" }
+
+# rusqlite's `bundled` feature compiles SQLite from source: no system sqlite3
+# needed on end-user machines, matching the self-contained export goal.
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 # `http`/`reqwest` are excluded: reqwest 0.9 is unmaintained and unused here.
 # `rand` is required because dyon 0.51.3's `threading` code references its `rng` field.

@@ -30,4 +30,7 @@ pub(crate) fn register(module: &mut Module) {
         Dfn::nl(vec![Type::Str], Type::Str),
     );
     crate::ui::register(module);
+    // SQLite commands live in vr-db; they register through this single entry
+    // point so the runtime has one place to look.
+    vr_db::register(module);
 }
