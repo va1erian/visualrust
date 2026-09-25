@@ -6,3 +6,15 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+# The curated raw SCI_* / SCN_* FFI surface; this crate is its safe facade.
+vr-scintilla-sys = { path = "../vr-scintilla-sys" }
+# The handle creates the control's HWND directly (no win32ui here); features are
+# the exact Win32 namespaces the `sys` module uses, and the version unifies with
+# vr-scintilla-sys' dev-dependency.
+windows = { version = "0.62", default-features = false, features = [
+    "Win32_Foundation",
+    "Win32_System_LibraryLoader",
+    "Win32_UI_WindowsAndMessaging",
+] }
+# Typed errors for window creation and text decoding.
+thiserror.workspace = true
