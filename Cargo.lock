@@ -782,8 +782,11 @@ name = "vr-runtime"
 version = "0.0.0"
 dependencies = [
  "dyon",
+ "embed-resource",
  "thiserror",
+ "vr-core",
  "vr-dyon",
+ "vr-tooling",
  "win32ui",
 ]
 

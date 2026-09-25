@@ -23,3 +23,5 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: test
         run: cargo test --workspace
+      - name: hello-window smoke
+        run: cargo test -p vr-runtime --test hello_window
