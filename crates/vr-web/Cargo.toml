@@ -6,3 +6,5 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+# Typed, `#[from]`-friendly errors with `Display`, per AGENTS.md.
+thiserror.workspace = true
