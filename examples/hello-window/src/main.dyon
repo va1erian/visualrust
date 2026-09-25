@@ -1,0 +1,8 @@
+fn main() {
+    win := ui_window("VisualRust hello window", 480, 320)
+    root := ui_column([
+        ui_label("Hello, window!"),
+        ui_label("Built from Dyon and win32ui")
+    ])
+    ui_run(win, root)
+}

@@ -10,6 +10,14 @@ win32ui.workspace = true
 vr-dyon.workspace = true
 thiserror.workspace = true
 
+[build-dependencies]
+# Embeds the Common Controls v6 manifest into the test binaries; the hello-window
+# sample creates win32ui controls through Dyon, exactly as vr-dyon's tests do.
+embed-resource = "3"
+
 [dev-dependencies]
 # Needed to register the recording native in the headless dispatch tests.
 dyon.workspace = true
+# The hello-window e2e reads the sample manifest and captures the live window.
+vr-core.workspace = true
+vr-tooling = { path = "../../crates/vr-tooling" }

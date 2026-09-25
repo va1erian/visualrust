@@ -1,0 +1,6 @@
+[project]
+name = "hello-window"
+version = "0.1.0"
+type = "desktop"
+entry = "src/main.dyon"
+description = "Minimal Dyon window sample, booted headless by the runtime smoke test"
