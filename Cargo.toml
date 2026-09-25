@@ -1,0 +1,36 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/vr-api",
+    "crates/vr-core",
+    "crates/vr-db",
+    "crates/vr-dyon",
+    "crates/vr-editor",
+    "crates/vr-forms",
+    "crates/vr-ide",
+    "crates/vr-scintilla",
+    "crates/vr-scintilla-sys",
+    "crates/vr-std",
+    "crates/vr-syntax",
+    "crates/vr-tooling",
+    "crates/vr-web",
+    "runtime/vr-runtime",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/va1erian/visualrust"
+rust-version = "1.90"
+
+[workspace.dependencies]
+# win32ui is pre-1.0 and moves quickly: always pin a rev, never a branch.
+win32ui = { git = "https://github.com/va1erian/win32ui", rev = "01d1778caa5c35edc44dabb8002781670580b17e" }
+vr-core = { path = "crates/vr-core" }
+vr-dyon = { path = "crates/vr-dyon" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+thiserror = "2"

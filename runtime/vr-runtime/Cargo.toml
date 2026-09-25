@@ -1,0 +1,10 @@
+﻿[package]
+name = "vr-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+win32ui.workspace = true
+vr-dyon = { path = '../../crates/vr-dyon' }
