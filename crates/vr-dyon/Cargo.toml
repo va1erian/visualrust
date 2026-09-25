@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "vr-dyon"
 version.workspace = true
 edition.workspace = true
@@ -6,3 +6,5 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+dyon.workspace = true
+thiserror.workspace = true
