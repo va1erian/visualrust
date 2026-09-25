@@ -5,4 +5,30 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+# Capture is always compiled: win32ui's composited `wgc` backend is enabled
+# below. This empty feature exists so the issue's
+# `cargo test -p vr-tooling --features capture` invocation keeps working.
+capture = []
+
 [dependencies]
+# Composited capture (`Window::capture_composited` / `capture::capture_hwnd`) is
+# enabled for this crate only, so the rest of the workspace stays off `wgc`.
+win32ui = { workspace = true, features = ["wgc"] }
+# Raw enumeration and the `PrintWindow` fallback live in `sys`; features are the
+# exact Win32 namespaces used there. Same major as win32ui, so it unifies.
+windows = { version = "0.62", default-features = false, features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Storage_Xps",
+    "Win32_System_Com",
+    "Win32_UI_WindowsAndMessaging",
+] }
+# PNG (de)coding for window snapshots and golden fixtures. Same major family as
+# win32ui's examples use, so the lockfile already carries it.
+png = "0.17"
+thiserror.workspace = true
+
+[dev-dependencies]
+# Integration tests build their own win32ui window; `wgc` is already unified in.
+win32ui.workspace = true
