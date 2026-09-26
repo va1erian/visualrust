@@ -10,7 +10,8 @@ use core::sync::atomic::{AtomicBool, Ordering};
 use windows::Win32::Foundation::{HINSTANCE, HWND};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DestroyWindow, WINDOW_EX_STYLE, WS_CHILD, WS_OVERLAPPED,
+    CreateWindowExW, DestroyWindow, MoveWindow, WINDOW_EX_STYLE, WS_CHILD, WS_OVERLAPPED,
+    WS_TABSTOP, WS_VISIBLE,
 };
 use windows::core::{PCWSTR, w};
 
@@ -57,10 +58,15 @@ fn ensure_registered() -> bool {
     REGISTERED.load(Ordering::SeqCst)
 }
 
-/// A Scintilla control and the hidden host window that parents it.
+/// A Scintilla control and, when this crate created it, the hidden host window
+/// that parents it.
+///
+/// A control hosted inside a win32ui `Custom` has no host of its own: the
+/// `Custom` owns the parent, `host` is `None`, and dropping the `Control`
+/// destroys only the child (which Win32 does anyway when the parent goes).
 pub(crate) struct Control {
     hwnd: *mut c_void,
-    host: *mut c_void,
+    host: Option<*mut c_void>,
 }
 
 impl Control {
@@ -129,13 +135,73 @@ impl Control {
 
         let control = Control {
             hwnd: hwnd.0,
-            host: host.0,
+            host: Some(host.0),
         };
-        // SAFETY: `hwnd` is a live control; the code page takes only a scalar.
-        unsafe {
-            send_message(control.hwnd, SCI_SETCODEPAGE, SC_CP_UTF8, 0);
-        }
+        control.set_utf8_codepage();
         Some(control)
+    }
+
+    /// Creates a visible `Scintilla` child of `parent`, or `None` when the
+    /// session cannot create windows. The caller (the win32ui `Custom` host)
+    /// owns `parent`; this `Control` never destroys it.
+    pub(crate) fn create_parented(parent: *mut c_void) -> Option<Control> {
+        if !ensure_registered() || parent.is_null() {
+            return None;
+        }
+        // SAFETY: `GetModuleHandleW` only reads the process module list.
+        let module = unsafe { GetModuleHandleW(None) }.ok()?;
+        let instance = HINSTANCE(module.0);
+
+        // SAFETY: `parent` is a live `Custom` window owned by the caller, and
+        // `instance` owns the `Scintilla` class registered above. The child is
+        // created filling the parent's origin; `resize` sets its real size.
+        let control = unsafe {
+            CreateWindowExW(
+                WINDOW_EX_STYLE(0),
+                w!("Scintilla"),
+                PCWSTR::null(),
+                WS_CHILD | WS_VISIBLE | WS_TABSTOP,
+                0,
+                0,
+                0,
+                0,
+                Some(HWND(parent)),
+                None,
+                Some(instance),
+                None,
+            )
+        };
+        let hwnd = control.ok()?;
+        let control = Control {
+            hwnd: hwnd.0,
+            host: None,
+        };
+        control.set_utf8_codepage();
+        Some(control)
+    }
+
+    /// Sets the UTF-8 code page so text messages are byte positions into UTF-8.
+    fn set_utf8_codepage(&self) {
+        // SAFETY: `self.hwnd` is a live control; the code page takes only a
+        // scalar argument.
+        unsafe {
+            send_message(self.hwnd, SCI_SETCODEPAGE, SC_CP_UTF8, 0);
+        }
+    }
+
+    /// The raw control handle. Only `sys` and the subclass installer use this;
+    /// it never leaves the crate.
+    pub(crate) fn raw_hwnd(&self) -> *mut c_void {
+        self.hwnd
+    }
+
+    /// Moves and resizes the control, `MoveWindow`.
+    pub(crate) fn resize(&self, x: i32, y: i32, width: i32, height: i32) {
+        // SAFETY: `self.hwnd` is live; a negative size is clamped to zero so
+        // Win32 never sees an invalid rectangle.
+        unsafe {
+            let _ = MoveWindow(HWND(self.hwnd), x, y, width.max(0), height.max(0), true);
+        }
     }
 
     /// Sends a scalar-parameter `SCI_*` message to the control.
@@ -143,7 +209,7 @@ impl Control {
     /// Callers must pass `wparam` / `lparam` values that match `message`'s
     /// contract and must not pass raw pointers here; the pointer-carrying
     /// messages below take slices so the pointer stays valid for the call.
-    fn send(&self, message: u32, wparam: usize, lparam: isize) -> isize {
+    pub(crate) fn send(&self, message: u32, wparam: usize, lparam: isize) -> isize {
         // SAFETY: `self.hwnd` is a live Scintilla control for as long as `self`
         // exists; `message` and its scalar parameters are chosen by the typed
         // methods in this module.
@@ -332,11 +398,15 @@ impl Control {
 
 impl Drop for Control {
     fn drop(&mut self) {
-        // SAFETY: both handles are live and owned by this `Control`; the child
-        // is destroyed before its parent, as Win32 requires.
+        // SAFETY: `self.hwnd` is a live control owned by this `Control`. A
+        // hosted control's parent is owned by the win32ui `Custom`, so it is
+        // not touched; the hidden host, when this crate created one, is
+        // destroyed after the child, as Win32 requires.
         unsafe {
             let _ = DestroyWindow(HWND(self.hwnd));
-            let _ = DestroyWindow(HWND(self.host));
+            if let Some(host) = self.host {
+                let _ = DestroyWindow(HWND(host));
+            }
         }
     }
 }
