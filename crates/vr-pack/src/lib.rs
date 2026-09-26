@@ -24,8 +24,9 @@
 //!
 //! [`export`] assembles an output executable by copying the stub its manifest
 //! type selects and appending the bundle. [`patch_resources`] then stamps the
-//! icon, version info and manifest onto that copy. The "build as a Rust
-//! project" mode is #70.
+//! icon, version info and manifest onto that copy. [`emit_rust_project`] is the
+//! alternative "build as a Rust project" mode (#70) for apps that link native
+//! Rust extensions.
 
 // `unsafe` is denied crate-wide; the Win32 resource calls that need it are the
 // only exception, isolated in `sys` behind an explicit module allow.
@@ -37,9 +38,14 @@ mod error;
 mod export;
 pub mod format;
 pub mod resources;
+mod rust_project;
 mod sys;
 
 pub use bundle::{Bundle, BundleEntry, EntryKind};
 pub use error::PackError;
 pub use export::{StubSource, Stubs, export, export_with_stub};
 pub use resources::{Resources, VersionInfo, patch_resources};
+pub use rust_project::{
+    BuildOutcome, RuntimeDependency, RustProject, RustProjectOptions, build_rust_project,
+    cargo_available, emit_rust_project,
+};
