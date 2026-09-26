@@ -1,0 +1,5 @@
+# Golden fixtures and generated sources are compared byte-for-byte, so they are
+# checked out with LF on every platform. Without this, a Windows checkout turns
+# the golden files into CRLF and the codegen test fails on line endings alone.
+*.dyon text eol=lf
+*.vrform text eol=lf
