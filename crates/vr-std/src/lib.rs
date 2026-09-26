@@ -1,4 +1,4 @@
-﻿//! PureBasic-inspired standard library.
+//! PureBasic-inspired standard library.
 //!
 //! `vr-std` owns both the safe Rust implementations of the library commands
 //! and the Dyon natives that expose them. It depends only on `dyon` and
@@ -37,9 +37,27 @@
 //!     println(sqrt(pow(3, 2) + pow(4, 2))) // 5
 //! }
 //! ```
+//!
+//! # Date and time
+//!
+//! [`datetime`] covers the PureBasic time commands: [`date`](datetime::date),
+//! [`time`](datetime::time), [`elapsed_milliseconds`](datetime::elapsed_milliseconds),
+//! [`format_date`](datetime::format_date), [`parse_date`](datetime::parse_date)
+//! and [`delay`](datetime::delay). Every command is **UTC** — `std` cannot read
+//! the local time zone without platform code, so the library documents one
+//! default instead of a half-supported local mode. Wall-clock and monotonic
+//! reads go through a [`Clock`], which tests freeze so assertions never depend
+//! on the current time.
+//!
+//! ```dyon
+//! fn main() {
+//!     println(format_date(0, "%Y-%m-%d %H:%M:%S")) // 1970-01-01 00:00:00
+//! }
+//! ```
 
 #![forbid(unsafe_code)]
 
+pub mod datetime;
 pub mod encoding;
 pub mod error;
 pub mod hash;
@@ -49,5 +67,6 @@ pub mod strings;
 
 mod native;
 
-pub use error::{EncodingError, HashError, MathError, RegexError, StringError};
+pub use datetime::{Clock, SystemClock};
+pub use error::{DateTimeError, EncodingError, HashError, MathError, RegexError, StringError};
 pub use native::register;

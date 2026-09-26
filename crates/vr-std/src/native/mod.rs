@@ -8,6 +8,7 @@
 
 use dyon::Module;
 
+mod datetime;
 mod encoding;
 mod hash;
 mod math;
@@ -24,4 +25,5 @@ pub fn register(module: &mut Module) {
     regex::register(module);
     hash::register(module);
     math::register(module);
+    datetime::register(module);
 }
