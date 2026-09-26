@@ -18,3 +18,7 @@ xui.workspace = true
 [dev-dependencies]
 # The capture helper the screenshot test drives; only the test needs it.
 vr-tooling = { path = "../vr-tooling" }
+# Compile-only validation of generated Dyon: the codegen test registers stub
+# signatures for the target `ui_*` surface (#136/#137/#138) and loads the
+# output, which checks parsing and the lifetime/type checker.
+dyon.workspace = true
