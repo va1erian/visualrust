@@ -13,7 +13,7 @@ use std::rc::Rc;
 use xui::gdi::{Canvas, Font};
 use xui::{CustomWidget, Input, Key, KeyResult, MouseButton, Rect, Size, Theme, WidgetCx};
 
-use crate::model::{Bounds, Form};
+use crate::model::{Bounds, Form, apply_anchors};
 
 use super::DesignerEvent;
 use super::interact::{self, DesignPoint, Handle};
@@ -36,17 +36,15 @@ enum Drag {
 pub(crate) struct DesignerState {
     pub(crate) form: Form,
     pub(crate) grid: f64,
-    pub(crate) dpi: u32,
     pub(crate) selected: Option<usize>,
     drag: Option<Drag>,
 }
 
 impl DesignerState {
-    pub(crate) fn new(form: Form, grid: f64, dpi: u32) -> DesignerState {
+    pub(crate) fn new(form: Form, grid: f64) -> DesignerState {
         DesignerState {
             form,
             grid,
-            dpi,
             selected: None,
             drag: None,
         }
@@ -59,20 +57,26 @@ impl DesignerState {
         self.drag = None;
     }
 
+    /// Resizes the form and anchors every control to the new surface.
+    pub(crate) fn resize_form(&mut self, new_size: crate::model::Size) {
+        apply_anchors(&mut self.form, new_size);
+        self.drag = None;
+    }
+
     /// Selects `index`, ignoring an out-of-range value.
     pub(crate) fn select(&mut self, index: Option<usize>) {
         let count = self.form.controls.len();
         self.selected = index.filter(|value| *value < count);
     }
 
-    /// A client-pixel point as design units.
-    fn point(&self, x: i32, y: i32) -> DesignPoint {
-        DesignPoint::new(px_to_dip(x, self.dpi), px_to_dip(y, self.dpi))
+    /// A client-pixel point as design units at the live `dpi`.
+    fn point(&self, x: i32, y: i32, dpi: u32) -> DesignPoint {
+        DesignPoint::new(px_to_dip(x, dpi), px_to_dip(y, dpi))
     }
 
     /// Handles a left press: grab a handle, select a control or clear.
-    fn mouse_down(&mut self, x: i32, y: i32) -> Option<DesignerEvent> {
-        let point = self.point(x, y);
+    fn mouse_down(&mut self, x: i32, y: i32, dpi: u32) -> Option<DesignerEvent> {
+        let point = self.point(x, y, dpi);
         if let Some(index) = self.selected
             && let Some(control) = self.form.controls.get(index)
             && let Some(handle) = interact::handle_at(control.bounds, point, HANDLE_REACH_DIP)
@@ -93,8 +97,8 @@ impl DesignerState {
     }
 
     /// Moves or resizes the control being dragged.
-    fn mouse_move(&mut self, x: i32, y: i32) -> Option<DesignerEvent> {
-        let point = self.point(x, y);
+    fn mouse_move(&mut self, x: i32, y: i32, dpi: u32) -> Option<DesignerEvent> {
+        let point = self.point(x, y, dpi);
         let index = self.selected?;
         match self.drag.as_ref()? {
             Drag::Move { start, origin } => {
@@ -155,15 +159,23 @@ impl DesignerState {
 /// The owner-drawn widget behind a [`FormDesigner`](super::FormDesigner).
 pub(crate) struct DesignerWidget {
     state: Rc<RefCell<DesignerState>>,
+    /// Reads the window's current DPI through the live `Ui`, so a paint after a
+    /// monitor move scales with the new DPI instead of a value cached when the
+    /// widget was built.
+    dpi: Rc<dyn Fn() -> u32>,
     /// The UI font, created once per DPI and reused across paints so a repaint
     /// allocates no GDI object.
     font: RefCell<Option<(u32, Rc<Font>)>>,
 }
 
 impl DesignerWidget {
-    pub(crate) fn new(state: Rc<RefCell<DesignerState>>) -> DesignerWidget {
+    pub(crate) fn new(
+        state: Rc<RefCell<DesignerState>>,
+        dpi: Rc<dyn Fn() -> u32>,
+    ) -> DesignerWidget {
         DesignerWidget {
             state,
+            dpi,
             font: RefCell::new(None),
         }
     }
@@ -193,9 +205,12 @@ impl CustomWidget for DesignerWidget {
     type Event = DesignerEvent;
 
     fn paint(&self, canvas: &Canvas, bounds: Rect, theme: &Theme) {
+        // `Canvas` carries no DPI, so ask the live `Ui` rather than a cached
+        // value; a monitor move changes this between paints.
+        let dpi = (self.dpi)();
         let state = self.state.borrow();
-        let font = self.font(state.dpi);
-        paint::paint(canvas, bounds, theme, &state, font.as_deref());
+        let font = self.font(dpi);
+        paint::paint(canvas, bounds, theme, &state, font.as_deref(), dpi);
     }
 
     fn preferred_size(&self, dpi: u32) -> Option<Size> {
@@ -210,6 +225,9 @@ impl CustomWidget for DesignerWidget {
     }
 
     fn input(&self, input: Input, cx: &mut WidgetCx<DesignerEvent>) {
+        // Input coordinates are device pixels; convert with the context's live
+        // DPI so hit-testing stays correct after a monitor move.
+        let dpi = cx.dpi();
         let event = match input {
             Input::MouseDown {
                 x,
@@ -219,9 +237,9 @@ impl CustomWidget for DesignerWidget {
             } => {
                 cx.focus();
                 cx.capture();
-                self.state.borrow_mut().mouse_down(x, y)
+                self.state.borrow_mut().mouse_down(x, y, dpi)
             }
-            Input::MouseMove { x, y, .. } => self.state.borrow_mut().mouse_move(x, y),
+            Input::MouseMove { x, y, .. } => self.state.borrow_mut().mouse_move(x, y, dpi),
             Input::MouseUp {
                 button: MouseButton::Left,
                 ..
