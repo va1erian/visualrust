@@ -24,7 +24,8 @@ use crate::messages::{
     SCI_INDICSETSTYLE, SCI_MARGINSETTEXT, SCI_MARKERADD, SCI_MARKERDEFINE, SCI_MARKERDELETE,
     SCI_SETCODEPAGE, SCI_SETILEXER, SCI_SETINDICATORCURRENT, SCI_SETINDICATORVALUE,
     SCI_SETMARGINTYPEN, SCI_SETMARGINWIDTHN, SCI_SETSTYLING, SCI_SETTEXT, SCI_STARTSTYLING,
-    SCI_STYLESETBACK, SCI_STYLESETBOLD, SCI_STYLESETFORE, SCI_STYLESETITALIC, SCI_STYLESETSIZE,
+    SCI_STYLESETBACK, SCI_STYLESETBOLD, SCI_STYLESETFONT, SCI_STYLESETFORE, SCI_STYLESETITALIC,
+    SCI_STYLESETSIZE,
 };
 use vr_scintilla_sys::Scintilla_RegisterClasses;
 
@@ -260,6 +261,15 @@ impl Control {
 
     pub(crate) fn style_size(&self, style: i32, points: i32) {
         self.send(SCI_STYLESETSIZE, style as usize, points as isize);
+    }
+
+    pub(crate) fn style_font(&self, style: i32, bytes: &[u8]) {
+        // SAFETY: `bytes` is NUL-terminated and outlives this synchronous call.
+        self.send(
+            SCI_STYLESETFONT,
+            style as usize,
+            bytes.as_ptr().cast::<c_void>() as isize,
+        );
     }
 
     // Margins and markers.

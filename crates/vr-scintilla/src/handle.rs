@@ -98,6 +98,13 @@ impl Scintilla {
         self.control.style_size(style as i32, points);
     }
 
+    /// Sets the face of `style`, `SCI_STYLESETFONT`. An unknown face is ignored
+    /// by Scintilla, which keeps its default.
+    pub fn set_style_font(&self, style: u8, name: &str) {
+        self.control
+            .style_font(style as i32, &encode_c_string(name));
+    }
+
     // Margins and markers.
 
     /// Sets the content `margin` shows, `SCI_SETMARGINTYPEN`.
