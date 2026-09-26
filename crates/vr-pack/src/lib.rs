@@ -22,15 +22,18 @@
 //! corruption is caught before decompression; a byte flip or truncation yields
 //! a typed [`PackError`], never a panic.
 //!
-//! This crate owns the format only: the runtime loader is #51 and the export
-//! flow (icon/version patching, stub selection) is #52.
+//! [`export`] assembles an output executable by copying the stub its manifest
+//! type selects and appending the bundle. Icon/version patching is #53 and the
+//! "build as a Rust project" mode is #70; neither is done here.
 
 #![forbid(unsafe_code)]
 
 mod bundle;
 mod codec;
 mod error;
+mod export;
 pub mod format;
 
 pub use bundle::{Bundle, BundleEntry, EntryKind};
 pub use error::PackError;
+pub use export::{StubSource, Stubs, export, export_with_stub};

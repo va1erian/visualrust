@@ -48,4 +48,27 @@ pub enum PackError {
 
     #[error("bundle payload is malformed: {0}")]
     Malformed(String),
+
+    /// The caller's stub source has no runtime for this project type, so there
+    /// is nothing to append a bundle to; guessing a path would ship a wrong app.
+    #[error("no `{kind}` runtime stub is available for export")]
+    StubUnavailable { kind: &'static str },
+
+    /// A stub was named but is not a file on disk. Kept distinct from the
+    /// unavailable case so the output pane can say which path was wrong.
+    #[error("runtime stub `{}` does not exist or is not a file", path.display())]
+    StubMissing { path: PathBuf },
+
+    /// Export never overwrites; the caller must remove or rename the target.
+    #[error("export target `{}` already exists", path.display())]
+    OutputExists { path: PathBuf },
+
+    /// Copying the stub to the target failed before the bundle was appended.
+    #[error("could not copy stub `{from}` to `{to}`: {source}")]
+    StubCopy {
+        from: PathBuf,
+        to: PathBuf,
+        #[source]
+        source: io::Error,
+    },
 }
