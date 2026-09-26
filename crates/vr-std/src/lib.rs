@@ -5,6 +5,14 @@
 //! `thiserror`: the runtime assembly passes [`register`] into
 //! `DyonRuntime::from_source_with`, so `vr-dyon` never depends on this crate.
 //!
+//! # Naming
+//!
+//! Dyon resolves a function call by name only, so a native registered under a
+//! built-in's name shadows it for every later script. PureBasic commands that
+//! would collide therefore register under a prefixed name — `str_len`,
+//! `str_trim`, `num_str` and the `num_*` math commands — while names Dyon does
+//! not use keep the PureBasic spelling.
+//!
 //! # Strings
 //!
 //! [`strings`] is the pure, typed API. Its positions are **1-based** and count
@@ -34,7 +42,7 @@
 //!
 //! ```dyon
 //! fn main() {
-//!     println(sqrt(pow(3, 2) + pow(4, 2))) // 5
+//!     println(num_sqrt(num_pow(3, 2) + num_pow(4, 2))) // 5
 //! }
 //! ```
 //!

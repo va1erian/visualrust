@@ -5,8 +5,8 @@ use vr_dyon::DyonRuntime;
 
 /// The script concatenates every result so the test can assert on one string.
 ///
-/// Referencing `str`, `len` and `trim` also proves the PureBasic versions win
-/// over Dyon's built-ins for a program that registered this module.
+/// The PureBasic commands register under `num_str`, `str_len` and `str_trim`
+/// because the bare names would shadow Dyon's built-ins; see #104.
 const SCRIPT: &str = r#"
 fn run() -> str {
     return left("VisualRust", 6) +
@@ -14,23 +14,22 @@ fn run() -> str {
         "|" + mid("VisualRust", 7, 4) +
         "|" + ucase("dyn") +
         "|" + lcase("DYn") +
-        "|" + str(find_string("VisualRust", "Rust")) +
+        "|" + num_str(find_string("VisualRust", "Rust")) +
         "|" + replace_string("a-b-c", "-", "+") +
-        "|" + trim("  hi  ") +
-        "|" + str(count_string("banana", "an")) +
+        "|" + str_trim("  hi  ") +
+        "|" + num_str(count_string("banana", "an")) +
         "|" + insert_string("ab", 2, "-") +
         "|" + remove_string("a-b-c", 2, 1) +
         "|" + string_field("a,b,c", 2, ",") +
         "|" + space(3) +
-        "|" + str(val("42abc")) +
-        "|" + str(len("héllo")) +
+        "|" + num_str(val("42abc")) +
+        "|" + num_str(str_len("héllo")) +
         "|" + hex(255, 2) +
         "|" + bin(5, 4) +
         "|" + format(3.5, 2) +
         "|" + lset("ab", 4, "0") +
         "|" + rset("ab", 4, "0")
 }
-
 fn main() {}
 "#;
 
