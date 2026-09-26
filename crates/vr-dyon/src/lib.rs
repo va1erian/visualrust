@@ -9,12 +9,13 @@
 //! # UI bindings
 //!
 //! `ui_*` native functions let a Dyon program build and run a xui window:
-//! `ui_window(title, width, height)` returns a window plan, `ui_label(text)`,
-//! `ui_column(items)` and `ui_row(items)` return widget plans, and
-//! `ui_run(window, root)` creates the widgets and blocks in the message loop.
-//! Plans are Dyon custom objects (`Arc<Mutex<dyn Any>>`); the concrete widgets
-//! are created inside `ui_run`, because xui only hands out its `Ui` there.
-//! The bindings are documented in full in the [`ui`](crate::ui) module.
+//! `ui_window(title, width, height)` returns a window plan,
+//! `ui_free(width, height)` returns an anchored root, the `ui_<kind>(text, x,
+//! y, w, h)` constructors return widget plans, and
+//! `ui_run(window, root)` registers the tree and returns. The host loop starts
+//! from [`DyonRuntime::run`] once `main` has returned, so handlers run with the
+//! Dyon program off the stack and can never re-enter it. The bindings are
+//! documented in full in the crate's `ui` module.
 
 #![forbid(unsafe_code)]
 

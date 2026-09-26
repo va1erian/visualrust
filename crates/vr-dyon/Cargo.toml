@@ -25,3 +25,9 @@ embed-resource = "3"
 [dev-dependencies]
 # The UI smoke test captures the Dyon-built window through the shared harness.
 vr-tooling = { path = "../vr-tooling" }
+# The event/anchoring test registers a recording native, so it needs Dyon's
+# module types directly.
+dyon.workspace = true
+# The anchoring test resizes the live window and reads the anchored child's
+# rectangle: the only public resize path from a test process.
+windows = { workspace = true, features = ["Win32_UI_WindowsAndMessaging"] }
