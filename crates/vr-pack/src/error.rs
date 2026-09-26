@@ -71,4 +71,27 @@ pub enum PackError {
         #[source]
         source: io::Error,
     },
+
+    /// A `.ico` blob could not be split into `RT_ICON`/`RT_GROUP_ICON` entries.
+    /// Best-effort patching treats this as a hard error because shipping a
+    /// broken icon group is worse than shipping the stub's own icon.
+    #[error("icon is not a valid .ico: {reason}")]
+    InvalidIcon { reason: String },
+
+    /// The manifest's version string is not a dot-separated numeric version.
+    #[error("invalid version `{value}`: {reason}")]
+    InvalidVersion { value: String, reason: &'static str },
+
+    /// The Win32 resource APIs rejected the image (not a PE, output locked, ...).
+    /// The input file is untouched: patching works on a staging copy.
+    #[error("could not patch resources in `{}`: {message}", path.display())]
+    ResourcePatch { path: PathBuf, message: String },
+
+    /// Swapping the patched staging copy back over the target failed.
+    #[error("could not replace `{}` with the patched copy: {source}", path.display())]
+    ResourceCommit {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
 }
