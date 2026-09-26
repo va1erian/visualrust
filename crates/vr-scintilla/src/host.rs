@@ -162,6 +162,10 @@ impl<M: 'static> NotificationSink for Notifier<M> {
     }
 }
 
+/// The editor's fixed-width face. Columns and indentation only line up in a
+/// monospace font; Scintilla keeps its default if the face is not installed.
+const EDITOR_FONT: &str = "Consolas";
+
 /// One-time control configuration: the container lexer, a line-number margin,
 /// tabs and a point size for every Dyon style.
 fn configure(editor: &Scintilla) {
@@ -169,9 +173,12 @@ fn configure(editor: &Scintilla) {
     editor.set_margin_type(0, MarginType::Number);
     editor.set_margin_width(0, 48);
     for style in StyleKind::ALL {
+        editor.set_style_font(style.index(), EDITOR_FONT);
         editor.set_style_size(style.index(), 11);
     }
+    editor.set_style_font(STYLE_DEFAULT, EDITOR_FONT);
     editor.set_style_size(STYLE_DEFAULT, 11);
+    editor.set_style_font(STYLE_LINENUMBER, EDITOR_FONT);
     editor.set_style_size(STYLE_LINENUMBER, 10);
 }
 

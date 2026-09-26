@@ -6,6 +6,9 @@
 
 pub use vr_scintilla_sys::messages::*;
 
+// Style face.
+pub const SCI_STYLESETFONT: u32 = 2056;
+
 // Margins and markers.
 pub const SCI_MARKERDEFINE: u32 = 2040;
 pub const SCI_MARKERADD: u32 = 2043;
