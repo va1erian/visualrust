@@ -219,3 +219,62 @@ pub enum DateTimeError {
         expected: &'static str,
     },
 }
+
+/// A rejected file, directory or console argument.
+///
+/// The pure file API turns every `std::io` failure into a typed [`FileError`]
+/// instead of handing the raw error on, so one message renders at the Dyon
+/// boundary and tests can match the cause (`NotFound`, `AlreadyExists`, ...)
+/// without depending on the OS error string. `message` carries that string for
+/// the human reading the script output.
+#[derive(Debug, Error, Clone, PartialEq)]
+pub enum FileError {
+    /// The filesystem rejected an operation.
+    #[error("{function}: `{path}`: {message}")]
+    Io {
+        /// The Dyon command that failed.
+        function: &'static str,
+        /// The path the command acted on, or the stream name for console I/O.
+        path: String,
+        /// The recognisable category from `std::io`.
+        kind: std::io::ErrorKind,
+        /// The OS description of the failure.
+        message: String,
+    },
+    /// The mode passed to `open_file` was not `read`, `write` or `append`.
+    #[error("open_file: unknown mode `{mode}` (expected `read`, `write` or `append`)")]
+    UnknownMode {
+        /// The rejected mode string.
+        mode: String,
+    },
+    /// An operation ran on a handle that had already been closed.
+    #[error("{function}: the file handle is closed")]
+    Closed {
+        /// The Dyon command that failed.
+        function: &'static str,
+    },
+    /// `read_string` found bytes that are not valid UTF-8.
+    #[error("{function}: the file contents are not valid UTF-8")]
+    NotUtf8 {
+        /// The Dyon command that failed.
+        function: &'static str,
+    },
+    /// A Dyon value that should have been a file handle was some other type.
+    #[error("value is not a file handle")]
+    NotAHandle,
+    /// A previous panic left a handle's mutex unusable.
+    #[error("the file handle was poisoned by an earlier panic")]
+    Poisoned,
+    /// `get_path_part` was asked for a part it does not define.
+    #[error("get_path_part: `{part}` is not a known part (expected drive, dir, name or ext)")]
+    UnknownPathPart {
+        /// The rejected part name.
+        part: String,
+    },
+    /// `write_data` was given something other than an array.
+    #[error("expected an array of bytes 0-255, got {0}")]
+    NotAnArray(String),
+    /// A `write_data` element was not a whole number in `0..=255`.
+    #[error("a byte must be a whole number 0-255, got `{0}`")]
+    InvalidByteElement(String),
+}
