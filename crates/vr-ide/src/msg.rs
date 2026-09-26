@@ -16,6 +16,10 @@ pub enum Msg {
     OpenProject,
     /// Save the active document.
     Save,
+    /// Reload the active document from disk.
+    Reload,
+    /// The editor's text or save point changed; recompute the dirty flag.
+    DocumentChanged,
     /// Close the window.
     Exit,
     /// Undo the last edit.

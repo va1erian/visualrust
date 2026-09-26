@@ -11,6 +11,11 @@ build = "build.rs"
 thiserror.workspace = true
 # The IDE window, its controls and its menus are all xui widgets; workspace pin.
 xui.workspace = true
+# The editor pane hosts the real Scintilla control through the safe host widget.
+vr-scintilla = { path = "../vr-scintilla" }
+# The startup document is the entry of the nearest `vrproj.toml`, so the IDE
+# reads the manifest rather than re-implementing the project model.
+vr-core.workspace = true
 
 [build-dependencies]
 # Embeds the Common Controls v6 + DPI manifest into the binary and test

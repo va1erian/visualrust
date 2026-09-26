@@ -937,6 +937,8 @@ version = "0.0.0"
 dependencies = [
  "embed-resource",
  "thiserror",
+ "vr-core",
+ "vr-scintilla",
  "vr-tooling",
  "xui",
 ]
