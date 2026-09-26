@@ -27,8 +27,8 @@ rust-version = "1.90"
 
 [workspace.dependencies]
 # xui is pre-1.0 and moves quickly: always pin a rev, never a branch.
-xui = { git = "https://github.com/va1erian/xui", rev = "cb0af9575186ab20f58d688654a7942cd096e87b" }
-xui-win32 = { git = "https://github.com/va1erian/xui", rev = "cb0af9575186ab20f58d688654a7942cd096e87b" }
+xui = { git = "https://github.com/va1erian/xui", rev = "ad227ffd9581d0ff87916688b1fb89ca3fccdf83" }
+xui-win32 = { git = "https://github.com/va1erian/xui", rev = "ad227ffd9581d0ff87916688b1fb89ca3fccdf83" }
 vr-core = { path = "crates/vr-core" }
 vr-db = { path = "crates/vr-db" }
 vr-dyon = { path = "crates/vr-dyon" }
