@@ -54,12 +54,39 @@
 //!     println(format_date(0, "%Y-%m-%d %H:%M:%S")) // 1970-01-01 00:00:00
 //! }
 //! ```
+//!
+//! # Files and directories
+//!
+//! [`files`] covers the PureBasic file commands. Handles are Dyon custom
+//! objects opened in `"read"`, `"write"` or `"append"` mode; reads are whole
+//! file (or whole remainder), [`files::read_data`]/[`files::write_data`] are
+//! binary-safe byte arrays, and the directory commands create, delete and list
+//! entries. Path validation always produces a typed [`FileError`] rather than a
+//! panic, and nothing in a test touches real user data.
+//!
+//! ```dyon
+//! fn main() {
+//!     f := open_file("hello.txt", "write")
+//!     write_string(f, "hi")
+//!     close_file(f)
+//!     println(get_path_part("C:\\tmp\\hello.txt", "name")) // hello.txt
+//! }
+//! ```
+//!
+//! # Console
+//!
+//! [`console`] adds only PureBasic's `Input` (`input`), which prompts before
+//! reading a line. Dyon's `stdio` feature already supplies `print`, `println`,
+//! `eprint`, `eprintln` and `read_line`, so those are left alone rather than
+//! shadowed.
 
 #![forbid(unsafe_code)]
 
+pub mod console;
 pub mod datetime;
 pub mod encoding;
 pub mod error;
+pub mod files;
 pub mod hash;
 pub mod math;
 pub mod regex;
@@ -68,5 +95,7 @@ pub mod strings;
 mod native;
 
 pub use datetime::{Clock, SystemClock};
-pub use error::{DateTimeError, EncodingError, HashError, MathError, RegexError, StringError};
+pub use error::{
+    DateTimeError, EncodingError, FileError, HashError, MathError, RegexError, StringError,
+};
 pub use native::register;
