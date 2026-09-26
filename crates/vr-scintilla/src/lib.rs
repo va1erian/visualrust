@@ -2,9 +2,9 @@
 //!
 //! Everything the rest of the IDE needs from Scintilla goes through typed
 //! methods on [`Scintilla`] and the [`Scn`] notification enum, so callers never
-//! build a raw `SCI_*` message by hand. Window hosting (embedding the control
-//! in a win32ui widget) is deliberately out of scope here; this crate only
-//! owns a control and its hidden host window.
+//! build a raw `SCI_*` message by hand. [`ScintillaHost`] embeds a control in a
+//! win32ui `Custom`, fills the pane on resize, routes `SCN_*` notifications and
+//! applies Dyon highlighting from `vr-syntax`.
 //!
 //! `unsafe` lives only in the private [`sys`] module, which wraps every raw
 //! pointer and `HWND` use in a safe method with a documented contract. The crate
@@ -29,13 +29,16 @@
 mod codec;
 mod error;
 mod handle;
+mod host;
 mod messages;
 mod scn;
 mod sys;
+mod theme_map;
 mod types;
 
 pub use error::{Error, Result};
 pub use handle::Scintilla;
+pub use host::ScintillaHost;
 pub use scn::Scn;
 pub use types::{AnnotationVisible, Color, IndicatorStyle, MarginType, MarkerSymbol};
 

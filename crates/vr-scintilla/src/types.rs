@@ -36,6 +36,13 @@ impl Color {
     }
 }
 
+/// `STYLE_DEFAULT`, the style Scintilla copies to the palette, from
+/// `Scintilla.h`.
+pub const STYLE_DEFAULT: u8 = 32;
+/// `STYLE_LINENUMBER`, the style a number margin draws its text with, from
+/// `Scintilla.h`.
+pub const STYLE_LINENUMBER: u8 = 33;
+
 /// The content a margin shows, `SCI_SETMARGINTYPEN`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MarginType {

@@ -972,6 +972,9 @@ version = "0.0.0"
 dependencies = [
  "thiserror",
  "vr-scintilla-sys",
+ "vr-syntax",
+ "vr-tooling",
+ "win32ui",
  "windows",
 ]
 

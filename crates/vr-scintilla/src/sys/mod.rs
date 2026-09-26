@@ -8,7 +8,10 @@
 #![allow(unsafe_code)]
 
 mod notification;
+mod style;
+mod subclass;
 mod window;
 
 pub use notification::decode_notification;
+pub(crate) use subclass::{NotificationSink, ParentSubclass};
 pub(crate) use window::Control;

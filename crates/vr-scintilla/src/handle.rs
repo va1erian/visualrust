@@ -4,6 +4,8 @@
 //! typed methods instead of raw `SCI_*` messages. Decoding and pointer handling
 //! live in [`crate::sys`] and [`crate::codec`].
 
+use core::ffi::c_void;
+
 use crate::codec::{decode_c_string, encode_c_string, style_runs};
 use crate::sys::Control;
 use crate::types::{AnnotationVisible, Color, IndicatorStyle, MarginType, MarkerSymbol};
@@ -26,6 +28,30 @@ impl Scintilla {
         Control::create()
             .map(|control| Scintilla { control })
             .ok_or(Error::CreateControl)
+    }
+
+    /// Creates a visible control parented to `parent` (a win32ui widget's
+    /// child `HWND`).
+    ///
+    /// The caller owns `parent`; this handle only owns the Scintilla child. The
+    /// parent must outlive the returned handle, which the host widget
+    /// guarantees by field order.
+    pub(crate) fn with_parent(parent: *mut c_void) -> Result<Scintilla> {
+        Control::create_parented(parent)
+            .map(|control| Scintilla { control })
+            .ok_or(Error::CreateControl)
+    }
+
+    /// The raw control handle, for the subclass installer. Never leaves the
+    /// crate.
+    pub(crate) fn raw_hwnd(&self) -> *mut c_void {
+        self.control.raw_hwnd()
+    }
+
+    /// Moves and resizes the control to `(x, y, width, height)` device pixels,
+    /// so it fills its parent's client area.
+    pub fn set_bounds(&self, x: i32, y: i32, width: i32, height: i32) {
+        self.control.resize(x, y, width, height);
     }
 
     /// The document length in bytes, `SCI_GETLENGTH`.
@@ -199,14 +225,34 @@ impl Scintilla {
         self.control.brace_match(position)
     }
 
-    /// Selects the container lexer (`SCI_SETILEXER(NULL)`) and styles
-    /// `styles[start..start + styles.len()]` in the same call.
+    /// Selects the container lexer (`SCI_SETILEXER(NULL)`), so Scintilla asks
+    /// for styles with `SCN_STYLENEEDED` instead of running a built-in lexer.
+    pub fn set_container_lexer(&self) {
+        self.control.set_ilexer_container();
+    }
+
+    /// The byte position up to which styles have been applied,
+    /// `SCI_GETENDSTYLED`.
+    pub fn end_styled(&self) -> usize {
+        self.control.end_styled()
+    }
+
+    /// The line containing `position`, `SCI_LINEFROMPOSITION`.
+    pub fn line_from_position(&self, position: i32) -> i32 {
+        self.control.line_from_position(position)
+    }
+
+    /// The first byte of `line`, `SCI_POSITIONFROMLINE`.
+    pub fn position_from_line(&self, line: i32) -> i32 {
+        self.control.position_from_line(line)
+    }
+
+    /// Paints `styles` from byte `start` without touching the lexer.
     ///
     /// `styles` holds one style number per byte. Consecutive equal numbers are
-    /// coalesced into a single `SCI_SETSTYLING` run. The caller is expected to
-    /// drive this from [`crate::Scn::StyleNeeded`].
-    pub fn set_container_lexer_and_styles(&self, start: usize, styles: &[u8]) {
-        self.control.set_ilexer_container();
+    /// coalesced into a single `SCI_SETSTYLING` run. The caller drives this
+    /// from [`crate::Scn::StyleNeeded`].
+    pub fn apply_styles(&self, start: usize, styles: &[u8]) {
         if styles.is_empty() {
             return;
         }
@@ -220,5 +266,46 @@ impl Scintilla {
             };
             self.control.set_styling(length, style as i32);
         }
+    }
+
+    /// Selects the container lexer and paints `styles` from byte `start`.
+    ///
+    /// A convenience for an initial full style; the incremental path calls
+    /// [`Scintilla::set_container_lexer`] once and then
+    /// [`Scintilla::apply_styles`] per notification.
+    pub fn set_container_lexer_and_styles(&self, start: usize, styles: &[u8]) {
+        self.control.set_ilexer_container();
+        self.apply_styles(start, styles);
+    }
+
+    // Margins, selection and caret colours.
+
+    /// Copies `STYLE_DEFAULT` over every style, `SCI_STYLECLEARALL`.
+    ///
+    /// The themed palette calls this so the whole viewport — the area beyond
+    /// the document and the margins — takes the theme background instead of
+    /// Scintilla's default white.
+    pub fn style_clear_all(&self) {
+        self.control.style_clear_all();
+    }
+
+    /// Sets a margin's background colour, `SCI_SETMARGINBACKN`.
+    pub fn set_margin_back(&self, margin: i32, color: Color) {
+        self.control.margin_back(margin, color.to_scintilla());
+    }
+
+    /// Sets the selection foreground colour, `SCI_SETSELFORE`.
+    pub fn set_selection_fore(&self, color: Color) {
+        self.control.selection_fore(color.to_scintilla());
+    }
+
+    /// Sets the selection background colour, `SCI_SETSELBACK`.
+    pub fn set_selection_back(&self, color: Color) {
+        self.control.selection_back(color.to_scintilla());
+    }
+
+    /// Sets the caret colour, `SCI_SETCARETFORE`.
+    pub fn set_caret_fore(&self, color: Color) {
+        self.control.caret_fore(color.to_scintilla());
     }
 }

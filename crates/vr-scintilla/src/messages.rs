@@ -33,3 +33,11 @@ pub const SCI_CALLTIPCANCEL: u32 = 2201;
 
 // Brace matching.
 pub const SCI_BRACEMATCH: u32 = 2353;
+
+// Margins, selection and caret colours. A number margin draws its text in
+// `STYLE_LINENUMBER`; the margin background is set separately with
+// `SCI_SETMARGINBACKN`.
+pub const SCI_SETMARGINBACKN: u32 = 2250;
+pub const SCI_SETSELFORE: u32 = 2067;
+pub const SCI_SETSELBACK: u32 = 2068;
+pub const SCI_SETCARETFORE: u32 = 2069;
