@@ -1,5 +1,5 @@
 //! Embeds the Common Controls v6 manifest into `vr-dyon`'s test binaries, the
-//! same way win32ui does for its own: the `ui_*` bindings create real win32ui
+//! same way xui does for its own: the `ui_*` bindings create real xui
 //! controls, and without the manifest `InitCommonControlsEx` fails.
 
 fn main() {

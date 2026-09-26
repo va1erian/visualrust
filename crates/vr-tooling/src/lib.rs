@@ -1,9 +1,9 @@
-﻿//! Capture, sandbox and automation test support for VisualRust.
+//! Capture, sandbox and automation test support for VisualRust.
 //!
 //! Two layers:
 //!
 //! * [`capture_window`] snapshots a live window to a PNG by handle, title or
-//!   process id. It uses win32ui's composited (`Windows.Graphics.Capture`)
+//!   process id. It uses xui's composited (`Windows.Graphics.Capture`)
 //!   backend and falls back to `PrintWindow`, so it works without raising,
 //!   focusing or unoccluding the target.
 //! * [`assert_matches_golden`] compares a capture against a checked-in golden

@@ -7,10 +7,10 @@
 //! The script calls `ui_window` / `ui_column` / `ui_label` / `ui_run`, so this
 //! exercises the plan objects round-tripping through the Dyon runtime and the
 //! widget tree being materialised inside `ui_run`. The window closes through
-//! `WIN32UI_DEMO_AUTOCLOSE_MS`, and a helper thread captures it with the
+//! `xui_DEMO_AUTOCLOSE_MS`, and a helper thread captures it with the
 //! `vr-tooling` harness so the test can inspect real pixels.
 //!
-//! Follows win32ui's skip pattern: when this session cannot create a window the
+//! Follows xui's skip pattern: when this session cannot create a window the
 //! test prints `SKIP` and passes instead of failing.
 
 use std::time::Duration;
@@ -48,7 +48,7 @@ fn dyon_script_builds_and_runs_a_window() {
     // SAFETY: this integration test binary contains exactly one test, so no
     // other test thread is running; the process environment is set once before
     // the runtime thread starts.
-    unsafe { std::env::set_var("WIN32UI_DEMO_AUTOCLOSE_MS", AUTOCLOSE_MS.to_string()) };
+    unsafe { std::env::set_var("xui_DEMO_AUTOCLOSE_MS", AUTOCLOSE_MS.to_string()) };
 
     let capture_path = std::env::temp_dir()
         .join("vr-dyon")
@@ -112,7 +112,7 @@ fn dyon_script_builds_and_runs_a_window() {
 
 /// Counts distinct RGB values, capped early: a rendered window is never one
 /// flat colour, while a blank capture is.
-fn distinct_colors(image: &win32ui::RgbaImage) -> usize {
+fn distinct_colors(image: &xui::RgbaImage) -> usize {
     let mut seen = std::collections::HashSet::new();
     for pixel in image.pixels.as_chunks::<4>().0 {
         seen.insert([pixel[0], pixel[1], pixel[2]]);

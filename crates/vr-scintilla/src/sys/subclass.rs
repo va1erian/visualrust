@@ -1,7 +1,7 @@
 //! Subclassing the Scintilla control's parent to receive its notifications.
 //!
 //! Scintilla is a foreign Win32 class: `NotifyParent` sends a `WM_NOTIFY` to
-//! the control's *immediate parent*, not to the control itself. The win32ui
+//! the control's *immediate parent*, not to the control itself. The xui
 //! widget layer owns that parent (a `Custom`'s child `HWND`) and does not route
 //! `WM_NOTIFY`, so this module chains a subclass in front of its window
 //! procedure with `SetWindowSubclass`, decodes each `SCNotification`, and hands

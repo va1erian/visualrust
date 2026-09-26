@@ -1,15 +1,15 @@
 //! The [`IdeApp`]: builds the shell's widgets and applies each [`Msg`].
 
-use win32ui::prelude::*;
+use xui::prelude::*;
 
 use crate::msg::Msg;
 use crate::state::IdeState;
 use crate::{menus, toolbar};
 
 /// Environment variable that makes the window quit itself, in milliseconds.
-pub(crate) const AUTOCLOSE_ENV: &str = "WIN32UI_DEMO_AUTOCLOSE_MS";
+pub(crate) const AUTOCLOSE_ENV: &str = "xui_DEMO_AUTOCLOSE_MS";
 /// Environment variable that selects the initial palette (`light` or `dark`).
-pub(crate) const THEME_ENV: &str = "WIN32UI_DEMO_THEME";
+pub(crate) const THEME_ENV: &str = "xui_DEMO_THEME";
 /// The window title; the smoke test selects the window by it.
 pub const TITLE: &str = "VisualRust IDE";
 
@@ -32,7 +32,7 @@ pub struct IdeApp {
 }
 
 impl IdeApp {
-    /// The window spec's palette, from `WIN32UI_DEMO_THEME` (default dark).
+    /// The window spec's palette, from `xui_DEMO_THEME` (default dark).
     pub(crate) fn initial_theme() -> Theme {
         match std::env::var(THEME_ENV) {
             Ok(value) if value.eq_ignore_ascii_case("light") => Theme::light(),
@@ -149,7 +149,7 @@ fn layout(
     layout
 }
 
-/// Arms `WIN32UI_DEMO_AUTOCLOSE_MS` so a headless run leaves on its own.
+/// Arms `xui_DEMO_AUTOCLOSE_MS` so a headless run leaves on its own.
 fn arm_autoclose(ui: &mut Ui<Msg>) {
     let Some(millis) = std::env::var(AUTOCLOSE_ENV)
         .ok()

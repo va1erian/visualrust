@@ -9,7 +9,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
-use win32ui::RgbaImage;
+use xui::RgbaImage;
 
 use crate::capture::{WindowSelector, capture_image};
 use crate::error::{Result, ToolingError};

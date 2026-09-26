@@ -6,20 +6,20 @@ license.workspace = true
 repository.workspace = true
 
 [features]
-# win32ui is opt-out so a headless consumer (vr-web) links no windowing code.
+# xui is opt-out so a headless consumer (vr-web) links no windowing code.
 default = ["ui"]
-ui = ["dep:win32ui"]
+ui = ["dep:xui"]
 
 [dependencies]
 dyon.workspace = true
 thiserror.workspace = true
-# The `ui_*` bindings build a win32ui window entirely from Dyon; workspace pin.
-# Optional so `default-features = false` drops win32ui from the dep graph.
-win32ui = { workspace = true, optional = true }
+# The `ui_*` bindings build a xui window entirely from Dyon; workspace pin.
+# Optional so `default-features = false` drops xui from the dep graph.
+xui = { workspace = true, optional = true }
 
 [build-dependencies]
 # Embeds the Common Controls v6 manifest into the test binaries; controls the
-# `ui_*` bindings create need it, exactly as win32ui's own tests do.
+# `ui_*` bindings create need it, exactly as xui's own tests do.
 embed-resource = "3"
 
 [dev-dependencies]

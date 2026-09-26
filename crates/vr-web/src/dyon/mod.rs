@@ -13,7 +13,7 @@
 //! the bridge, Dyon is neither shared nor re-entered.
 //!
 //! [`server_start`](#natives) blocks the Dyon program in that service loop
-//! until shutdown; that mirrors the win32ui `ui_run` model where a native call
+//! until shutdown; that mirrors the xui `ui_run` model where a native call
 //! owns the dispatch loop.
 //!
 //! # Natives

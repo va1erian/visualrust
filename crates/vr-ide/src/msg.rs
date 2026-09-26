@@ -3,7 +3,7 @@
 /// One user intent, raised by the window chrome and delivered to
 /// [`IdeApp::update`](crate::IdeApp).
 ///
-/// `Msg` is deliberately free of `win32ui` types: menus, toolbar buttons,
+/// `Msg` is deliberately free of `xui` types: menus, toolbar buttons,
 /// accelerators and timers all translate into this enum, and
 /// [`IdeState::apply`](crate::IdeState::apply) reduces it without touching a
 /// window. That keeps the view model unit-testable on a headless machine and

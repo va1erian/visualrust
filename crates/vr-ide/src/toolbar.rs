@@ -1,6 +1,6 @@
 //! The shell's toolbar, mapped to [`Msg`](crate::Msg).
 
-use win32ui::prelude::*;
+use xui::prelude::*;
 
 use crate::Msg;
 

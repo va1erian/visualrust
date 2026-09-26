@@ -30,7 +30,7 @@ impl Scintilla {
             .ok_or(Error::CreateControl)
     }
 
-    /// Creates a visible control parented to `parent` (a win32ui widget's
+    /// Creates a visible control parented to `parent` (a xui widget's
     /// child `HWND`).
     ///
     /// The caller owns `parent`; this handle only owns the Scintilla child. The

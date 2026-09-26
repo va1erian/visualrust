@@ -6,7 +6,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-win32ui.workspace = true
+xui.workspace = true
 vr-dyon.workspace = true
 thiserror.workspace = true
 # The self-read loader decodes the bundle appended to the executable and reads
@@ -16,7 +16,7 @@ vr-pack = { path = "../../crates/vr-pack" }
 
 [build-dependencies]
 # Embeds the Common Controls v6 manifest into the test binaries; the hello-window
-# sample creates win32ui controls through Dyon, exactly as vr-dyon's tests do.
+# sample creates xui controls through Dyon, exactly as vr-dyon's tests do.
 embed-resource = "3"
 
 [dev-dependencies]

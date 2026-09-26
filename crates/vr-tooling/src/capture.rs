@@ -1,6 +1,6 @@
 //! Capturing a live window to an in-memory image or a PNG file.
 //!
-//! The composited backend (`Windows.Graphics.Capture`, win32ui's `wgc`) is
+//! The composited backend (`Windows.Graphics.Capture`, xui's `wgc`) is
 //! tried first because it includes the DWM frame and never raises, focuses or
 //! unoccludes the target. If it is unavailable, the `PrintWindow` fallback
 //! renders the same window without COM or DWM.
@@ -8,7 +8,7 @@
 use std::fmt;
 use std::path::{Path, PathBuf};
 
-use win32ui::{Hwnd, RgbaImage};
+use xui::{Hwnd, RgbaImage};
 
 use crate::error::{Result, ToolingError};
 
@@ -57,10 +57,10 @@ impl fmt::Display for WindowSelector {
 /// while `PrintWindow` includes the invisible resize border.
 pub fn capture_image(selector: &WindowSelector) -> Result<RgbaImage> {
     let hwnd = resolve(selector)?;
-    // win32ui does not initialise COM; the composited capture wants an STA on
+    // xui does not initialise COM; the composited capture wants an STA on
     // this thread. The guard is inert when COM is already up.
     let _apartment = crate::sys::com::Apartment::initialize();
-    match win32ui::capture::capture_hwnd(hwnd) {
+    match xui::capture::capture_hwnd(hwnd) {
         Ok(image) => Ok(image),
         Err(error) => crate::sys::print_window(hwnd).ok_or_else(|| ToolingError::CaptureFailed {
             selector: selector.to_string(),
@@ -81,7 +81,7 @@ pub fn capture_window(selector: WindowSelector, out_path: impl AsRef<Path>) -> R
 
 /// Captures the selected window with the `PrintWindow` renderer only.
 ///
-/// The composited backend is preferred for its DWM frame, but the pinned win32ui
+/// The composited backend is preferred for its DWM frame, but the pinned xui
 /// rev faults inside `Windows.Graphics.Capture` when the target belongs to
 /// another process, and a fault cannot be caught to reach the fallback. A caller
 /// that has launched the target itself (an exported app under test) uses this to

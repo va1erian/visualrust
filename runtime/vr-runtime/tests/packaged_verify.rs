@@ -5,14 +5,14 @@
 //! the actual packaged artifact: it copies the built `vr-runtime.exe`, patches a
 //! Common Controls manifest onto that copy, appends the sample project's bundle
 //! through [`vr_pack::export`], launches the result with
-//! `WIN32UI_DEMO_AUTOCLOSE_MS`, and asserts a clean exit. While it runs, the test
+//! `xui_DEMO_AUTOCLOSE_MS`, and asserts a clean exit. While it runs, the test
 //! polls for the window owned by that child process and captures it with
 //! [`vr_tooling::capture_window_rendered`], then asserts the PNG is non-trivial
 //! (non-zero size, more than a couple of distinct colours).
 //!
 //! The renderer is used instead of [`vr_tooling::capture_window`] because the
 //! composited backend faults on a window owned by another process in the pinned
-//! win32ui rev, and a fault cannot be caught to reach its `PrintWindow` fallback.
+//! xui rev, and a fault cannot be caught to reach its `PrintWindow` fallback.
 //!
 //! Hosted in this crate because Cargo exposes the just-built binary only to its
 //! own integration tests (`CARGO_BIN_EXE_vr-runtime`), so `cargo test` builds the
@@ -38,7 +38,7 @@ use vr_tooling::{WindowSelector, capture_window_rendered, read_png};
 /// to keep the suite fast.
 const AUTOCLOSE_MS: u32 = 3000;
 /// Environment variable the runtime reads to arm its self-close timer.
-const AUTOCLOSE_ENV: &str = "WIN32UI_DEMO_AUTOCLOSE_MS";
+const AUTOCLOSE_ENV: &str = "xui_DEMO_AUTOCLOSE_MS";
 /// How often the poll retries a capture and checks whether the child exited.
 const POLL_MS: u64 = 100;
 /// How long to let the exported window show and paint before the first capture.
@@ -90,7 +90,7 @@ fn sample_dir() -> PathBuf {
 
 /// Counts distinct RGB values, capped early: a rendered window is never one
 /// flat colour, while a blank capture is.
-fn distinct_colors(image: &win32ui::RgbaImage) -> usize {
+fn distinct_colors(image: &xui::RgbaImage) -> usize {
     let mut seen = std::collections::HashSet::new();
     for pixel in image.pixels.as_chunks::<4>().0 {
         seen.insert([pixel[0], pixel[1], pixel[2]]);

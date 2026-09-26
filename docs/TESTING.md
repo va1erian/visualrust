@@ -11,8 +11,8 @@
 Agents must verify UI work programmatically; a description of a rendering is
 not evidence.
 
-1. **Screenshot**: `vr-tooling` wraps win32ui's composited capture
-   (`Window::capture_composited` / `capture::capture_hwnd`, behind win32ui's
+1. **Screenshot**: `vr-tooling` wraps xui's composited capture
+   (`Window::capture_composited` / `capture::capture_hwnd`, behind xui's
    `wgc` feature) to capture a window by title/HWND/PID to a PNG. Compare with
    a checked-in golden and fail on a diff over the tolerance.
 2. **Input**: `vr-tooling` can post keyboard/mouse input to a target window and

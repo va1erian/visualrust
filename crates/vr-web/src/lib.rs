@@ -18,7 +18,7 @@
 //! closure, and `Handler` is a trait rather than a `Fn` type, so the Dyon
 //! binding in [`dyon`] keeps the router as-is and maps each name to the owning
 //! runtime thread. A worker sends the [`Request`] to that thread and waits for
-//! the [`Response`], which matches the win32ui `Msg` model and keeps Dyon
+//! the [`Response`], which matches the xui `Msg` model and keeps Dyon
 //! single-threaded; see [`dyon`] for the `server_*` natives and the bridge.
 //!
 //! The HTTP parser is hand-rolled on purpose: the required subset is small

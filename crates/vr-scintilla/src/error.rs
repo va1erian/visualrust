@@ -10,7 +10,7 @@ pub enum Error {
     /// session without an interactive desktop.
     #[error("could not create the Scintilla control window")]
     CreateControl,
-    /// The parent window (a win32ui `Custom`) could not be subclassed, so
+    /// The parent window (a xui `Custom`) could not be subclassed, so
     /// `SCN_*` notifications would be lost. This is expected on a session
     /// without an interactive desktop.
     #[error("could not subclass the Scintilla parent window")]

@@ -3,7 +3,7 @@
 //! Registers Scintilla's window classes, creates a `Scintilla` child of a
 //! hidden `STATIC` window, and asks it for its length. When the session cannot
 //! create a window (for example a non-interactive desktop) the test prints
-//! `SKIP` and passes, following win32ui's test pattern.
+//! `SKIP` and passes, following xui's test pattern.
 
 use windows::Win32::Foundation::HINSTANCE;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;

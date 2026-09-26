@@ -2,11 +2,11 @@
 //!
 //! The test reads the sample's `vrproj.toml` through `vr-core` (so the manifest
 //! stays the single source of truth for the entry point), runs it through the
-//! real [`RuntimeApp`] host with `WIN32UI_DEMO_AUTOCLOSE_MS`, and asserts the
+//! real [`RuntimeApp`] host with `xui_DEMO_AUTOCLOSE_MS`, and asserts the
 //! run returns `Ok(())` — a clean exit. A helper thread captures the live
 //! window through `vr-tooling` so the test reports the PNG path and size.
 //!
-//! Follows win32ui's skip pattern: when the session cannot create a window the
+//! Follows xui's skip pattern: when the session cannot create a window the
 //! run fails with `DyonError::NoWindow`, the test prints `SKIP` and passes
 //! instead of failing.
 
@@ -39,7 +39,7 @@ fn hello_window_sample_runs_headless() {
     // SAFETY: this integration test binary contains exactly one test, so no
     // other test thread is running; the environment is set before the runtime
     // message loop starts and is not mutated afterwards.
-    unsafe { std::env::set_var("WIN32UI_DEMO_AUTOCLOSE_MS", AUTOCLOSE_MS.to_string()) };
+    unsafe { std::env::set_var("xui_DEMO_AUTOCLOSE_MS", AUTOCLOSE_MS.to_string()) };
 
     let capture_path = std::env::temp_dir()
         .join("vr-runtime")
@@ -113,7 +113,7 @@ fn sample_dir() -> PathBuf {
 
 /// Counts distinct RGB values, capped early: a rendered window is never one
 /// flat colour, while a blank capture is.
-fn distinct_colors(image: &win32ui::RgbaImage) -> usize {
+fn distinct_colors(image: &xui::RgbaImage) -> usize {
     let mut seen = std::collections::HashSet::new();
     for pixel in image.pixels.as_chunks::<4>().0 {
         seen.insert([pixel[0], pixel[1], pixel[2]]);

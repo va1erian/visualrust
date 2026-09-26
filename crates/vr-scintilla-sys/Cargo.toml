@@ -13,7 +13,7 @@ cc = "1"
 
 [target.'cfg(windows)'.dev-dependencies]
 # Only the smoke test creates a real window; the crate API stays raw FFI.
-# Same version/features as win32ui so the compiled bindings are shared.
+# Same version/features as xui so the compiled bindings are shared.
 windows = { version = "0.62", default-features = false, features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",

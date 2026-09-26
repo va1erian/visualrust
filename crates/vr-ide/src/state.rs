@@ -6,7 +6,7 @@
 //!   chrome (menus / toolbar / accelerators / timer)
 //!         |  Msg
 //!         v
-//!   IdeState::apply     pure reducer, no win32ui types
+//!   IdeState::apply     pure reducer, no xui types
 //!         |  Effect { quit, theme_changed, layout_changed, status_changed }
 //!         v
 //!   IdeApp::update      the only code that touches the live window
@@ -15,7 +15,7 @@
 //! Widgets never mutate state directly. They enqueue a [`Msg`], the reducer
 //! folds it into [`IdeState`] and returns the [`Effect`] describing what the
 //! window must do about it. Because the reducer is pure, the shell's behaviour
-//! can be tested without creating a window, and because win32ui delivers one
+//! can be tested without creating a window, and because xui delivers one
 //! queued message at a time, `update` is never re-entered.
 //!
 //! [`Msg`]: crate::Msg
