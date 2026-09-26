@@ -160,6 +160,22 @@ impl IdeState {
                 self.push_output("Form edited");
                 effect.output_changed = true;
             }
+            Msg::AddControl(kind) => {
+                self.status(&format!("Add {kind:?}"));
+                self.push_output(&format!("Add {kind:?}"));
+                effect.status_changed = true;
+                effect.output_changed = true;
+            }
+            // The property write itself happens in `IdeApp::update`, which is
+            // the only place that can reach the live designer; the reducer just
+            // asks the status bar to follow.
+            Msg::Commit(_) | Msg::SetAnchor(_) => effect.status_changed = true,
+            Msg::ResizeFormToPane => {
+                self.status("Resize form to pane");
+                self.push_output("Resized the form to the design pane");
+                effect.status_changed = true;
+                effect.output_changed = true;
+            }
             Msg::Save => {
                 self.status("Saved");
                 effect.status_changed = true;

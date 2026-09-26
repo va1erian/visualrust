@@ -3,12 +3,14 @@
 use std::path::{Path, PathBuf};
 
 use vr_forms::Form;
+use vr_forms::design::DesignerEvent;
 use vr_scintilla::{ScintillaHost, Scn};
 use xui::prelude::*;
 
-use crate::designer::{self, DesignPane};
+use crate::designer::DesignPane;
 use crate::document::{self, Document};
 use crate::explorer::{self, ItemKind};
+use crate::inspector::PropertyInspector;
 use crate::layout;
 use crate::msg::Msg;
 use crate::output::OutputPane;
@@ -22,6 +24,12 @@ pub(crate) const THEME_ENV: &str = "xui_DEMO_THEME";
 /// Environment variable that starts the shell in design mode (`1`), so a
 /// capture test can evidence the designer without driving input.
 pub(crate) const DESIGN_ENV: &str = "VR_IDE_PROTOTYPE_DESIGN";
+/// Environment variable that additionally selects a control and anchors it
+/// `Fill`, so a capture can evidence the populated inspector and anchoring.
+pub(crate) const DEMO_ENV: &str = "VR_IDE_PROTOTYPE_DESIGN_DEMO";
+/// Environment variable that resizes the form to the pane after this many
+/// milliseconds, so a capture test can show a `Fill` control stretch.
+pub(crate) const RESIZE_ENV: &str = "VR_IDE_PROTOTYPE_DESIGN_RESIZE_MS";
 /// The output pane's starting height, in design units.
 const OUTPUT_HEIGHT: f32 = 150.0;
 /// The window's starting client height, so the split divider opens near the
@@ -33,8 +41,8 @@ pub const TITLE: &str = "VisualRust IDE";
 /// The IDE shell's application state.
 ///
 /// It holds the view model, the project, the widgets whose `HWND`s must outlive
-/// `run_app`, and the active designer. `update` is the only place they are
-/// touched except for the one-time load in `build`.
+/// `run_app`, and the live designer. `update` is the only place they are
+/// touched except for the one-time setup in `build`.
 pub struct IdeApp {
     state: IdeState,
     /// `None` only if the control could not be created; the shell still runs.
@@ -51,11 +59,14 @@ pub struct IdeApp {
     output: Option<OutputPane>,
     /// The central form pane, shown instead of the editor in design mode.
     design: Option<DesignPane>,
+    /// The property inspector under the explorer; `None` when it could not be
+    /// created or there is no desktop.
+    inspector: Option<PropertyInspector>,
     status: Option<StatusBar<Msg>>,
     /// The loaded project, for resolving an explorer selection.
     project: explorer::Loaded,
-    /// The form currently previewed in design mode.
-    selected_form: Option<Form>,
+    /// The file backing the form in the designer, for `File > Save`.
+    form_path: Option<PathBuf>,
     /// The open document; owns the path for save and reload.
     document: Document,
     /// The editor text as last loaded or saved. The live control is compared
@@ -131,10 +142,23 @@ impl IdeApp {
                 None
             }
         };
-        let design = match DesignPane::new(ui) {
+        let design = match DesignPane::new(ui, explorer::sample_form()) {
+            Ok(mut pane) => {
+                pane.on_change(|event| match event {
+                    DesignerEvent::SelectionChanged(index) => Some(Msg::DesignSelection(index)),
+                    DesignerEvent::FormEdited => Some(Msg::DesignEdited),
+                });
+                Some(pane)
+            }
+            Err(error) => {
+                failures.push(format!("designer: {error}"));
+                None
+            }
+        };
+        let inspector = match PropertyInspector::new(ui) {
             Ok(pane) => Some(pane),
             Err(error) => {
-                failures.push(format!("design pane: {error}"));
+                failures.push(format!("inspector: {error}"));
                 None
             }
         };
@@ -154,15 +178,18 @@ impl IdeApp {
 
         ui.set_menu_bar(menus::menu_bar(&state));
         ui.set_layout(layout::build(
-            &toolbar,
-            &explorer,
-            &editor,
-            &output,
-            &design,
-            &status,
+            layout::Panes {
+                toolbar: &toolbar,
+                explorer: &explorer,
+                editor: &editor,
+                output: &output,
+                design: &design,
+                inspector: &inspector,
+                status: &status,
+            },
             dip(INITIAL_CLIENT_HEIGHT - OUTPUT_HEIGHT - 60.0),
         ));
-        arm_autoclose(ui);
+        arm_timers(ui);
 
         let mut app = IdeApp {
             state,
@@ -171,18 +198,23 @@ impl IdeApp {
             editor,
             output,
             design,
+            inspector,
             status,
             project,
-            selected_form: None,
+            form_path: None,
             document: initial.document,
             baseline,
         };
         app.sync_bars(ui);
         app.refresh_output();
         app.apply_scintilla_theme(ui);
-        // The design pane starts hidden; the editor is the default centre.
+        // The designer and its inspector start hidden; the editor is the
+        // default centre until design mode is entered.
         if let Some(pane) = &app.design {
-            pane.set_visible(app.state.design);
+            pane.set_visible(false);
+        }
+        if let Some(pane) = &app.inspector {
+            pane.set_visible(false);
         }
         if env_flag(DESIGN_ENV) {
             app.state.design = true;
@@ -218,6 +250,16 @@ impl IdeApp {
     fn refresh_output(&self) {
         if let Some(pane) = &self.output {
             pane.set_lines(&self.state.output);
+        }
+    }
+
+    /// Saves whichever document the central pane shows: the form in design
+    /// mode, otherwise the editor.
+    fn save_active(&mut self) {
+        if self.state.design {
+            self.save_form();
+        } else {
+            self.save();
         }
     }
 
@@ -288,7 +330,9 @@ impl IdeApp {
         };
         match item.kind {
             ItemKind::Form => {
-                self.selected_form = Some(self.load_form(item.path.as_deref()));
+                self.form_path = item.path.clone();
+                let form = self.load_form(item.path.as_deref());
+                self.load_form_into_designer(form);
             }
             ItemKind::Source => self.open_source(item.path.as_deref(), &item.name),
         }
@@ -344,43 +388,6 @@ impl IdeApp {
             }
         }
     }
-
-    /// Enters or leaves design mode so the central pane matches
-    /// [`IdeState::design`].
-    ///
-    /// Design mode is a mode, not a tab: the editor and the form pane share the
-    /// central slot, and the editor is hidden while design mode is on. The
-    /// pinned xui cannot host the live `DesignerSurface` here — see
-    /// [`crate::designer`] — so the pane renders the selected form model.
-    fn sync_design(&mut self, ui: &Ui<Msg>) {
-        if self.state.design {
-            let form = self
-                .selected_form
-                .clone()
-                .unwrap_or_else(explorer::sample_form);
-            let text = designer::render(Some(&form));
-            if let Some(pane) = &self.design {
-                pane.set_text(&text);
-                pane.set_visible(true);
-            }
-            self.state
-                .push_output(&format!("Design mode on: {}", form.name));
-        } else {
-            if let Some(pane) = &self.design {
-                pane.set_visible(false);
-            }
-            self.state.push_output("Design mode off");
-        }
-        if let Some(host) = &self.editor {
-            host.set_visible(!self.state.design);
-        }
-        ui.set_menu_checked(menus::DESIGN, self.state.design);
-        self.refresh_output();
-        if let Some(bar) = &self.status {
-            bar.set_text(0, &self.state.status_line());
-        }
-        ui.relayout();
-    }
 }
 
 impl App for IdeApp {
@@ -389,10 +396,16 @@ impl App for IdeApp {
     fn update(&mut self, msg: Msg, ui: &mut Ui<Msg>) {
         let effect = self.state.apply(&msg);
         match msg {
-            Msg::Save => self.save(),
+            Msg::Save => self.save_active(),
             Msg::Reload => self.reload(),
             Msg::DocumentChanged => self.refresh_dirty(),
             Msg::SelectExplorer(_) => self.apply_selection(),
+            Msg::AddControl(kind) => self.add_control(kind),
+            Msg::Commit(field) => self.commit_property(field),
+            Msg::SetAnchor(anchor) => self.set_anchor(anchor),
+            Msg::ResizeFormToPane => self.resize_form_to_pane(ui),
+            // A designer selection or edit changes what the inspector shows.
+            Msg::DesignSelection(_) | Msg::DesignEdited => self.refresh_inspector(),
             _ => {}
         }
         if effect.design_changed {
@@ -433,6 +446,8 @@ impl App for IdeApp {
     }
 }
 
+mod design;
+
 /// Splits the CLI argument into a project start directory and an optional file.
 fn split_argument(path: Option<PathBuf>, cwd: &Path) -> (PathBuf, Option<PathBuf>) {
     match path {
@@ -450,8 +465,13 @@ fn split_argument(path: Option<PathBuf>, cwd: &Path) -> (PathBuf, Option<PathBuf
 }
 
 /// Whether an environment variable is set to a truthy value.
-fn env_flag(name: &str) -> bool {
+pub(crate) fn env_flag(name: &str) -> bool {
     std::env::var(name).is_ok_and(|value| value != "0" && !value.is_empty())
+}
+
+/// The millisecond value of an environment variable, if it parses.
+fn env_millis(name: &str) -> Option<u32> {
+    std::env::var(name).ok()?.parse::<u32>().ok()
 }
 
 /// Maps a Scintilla notification to the app's message, or `None` to ignore it.
@@ -473,18 +493,24 @@ fn palette(dark: bool) -> Theme {
     if dark { Theme::dark() } else { Theme::light() }
 }
 
-/// Arms `xui_DEMO_AUTOCLOSE_MS` so a headless run leaves on its own.
-fn arm_autoclose(ui: &mut Ui<Msg>) {
-    let Some(millis) = std::env::var(AUTOCLOSE_ENV)
-        .ok()
-        .and_then(|value| value.parse::<u32>().ok())
-    else {
+/// Arms the autoclose and design-resize timers named by their environment
+/// variables. One `WM_TIMER` mapping dispatches both, since only one can be
+/// installed per window.
+fn arm_timers(ui: &mut Ui<Msg>) {
+    let autoclose = env_millis(AUTOCLOSE_ENV).and_then(|millis| ui.set_timer(millis).ok());
+    let resize = env_millis(RESIZE_ENV).and_then(|millis| ui.set_timer(millis).ok());
+    if autoclose.is_none() && resize.is_none() {
         return;
-    };
-    let Ok(timer) = ui.set_timer(millis) else {
-        return;
-    };
-    ui.on_timer(move |fired| (fired == timer).then_some(Msg::AutoClose));
+    }
+    ui.on_timer(move |fired| {
+        if Some(fired) == autoclose {
+            Some(Msg::AutoClose)
+        } else if Some(fired) == resize {
+            Some(Msg::ResizeFormToPane)
+        } else {
+            None
+        }
+    });
 }
 
 #[cfg(test)]

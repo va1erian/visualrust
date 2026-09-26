@@ -4,13 +4,14 @@
 //! light/dark themed window with a File / Edit / View / Build / Run / Help menu
 //! bar, a toolbar, a project explorer, a central pane and an output pane, all
 //! over a status bar. The central pane is the real Scintilla editor from
-//! `vr-scintilla` by default and a form pane in design mode.
+//! `vr-scintilla` by default and the real `vr_forms::design::FormDesigner` in
+//! design mode.
 //!
-//! Design mode is a **mode**, not a tab: the live `vr_forms::DesignerSurface`
-//! turns on `Ui::set_design_mode(true)` for the whole window, so it cannot sit
-//! beside an editable editor. See [`designer`] for why this shell renders the
-//! form model rather than hosting the surface: the surface targets xui's
-//! portable core app, whose `Ui` type differs from the native shell's.
+//! Design mode is a **mode**, not a tab: the editor and the designer share the
+//! central slot and only the visible one takes space, so leaving design mode
+//! restores an editable editor. The [`designer`] pane hosts the model directly
+//! and [`inspector`] edits it; a `Form` menu and the [`inspector`]'s anchor
+//! selector are the palette.
 //!
 //! ## View model
 //!
@@ -49,6 +50,7 @@ mod app;
 mod designer;
 mod document;
 mod explorer;
+mod inspector;
 mod layout;
 mod menus;
 mod msg;
