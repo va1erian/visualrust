@@ -41,6 +41,10 @@ impl DyonRuntime {
         register(&mut module);
         dyon::load_str(source_name, Arc::new(source.to_owned()), &mut module)
             .map_err(|message| DyonError::compile(source_name, message))?;
+        // Dyon does not expose a loaded function's signature, so the handler
+        // arities the UI dispatch needs are scanned from the source once.
+        #[cfg(feature = "ui")]
+        crate::ui::set_arities(source);
         Ok(Self {
             runtime: Runtime::new(),
             module: Arc::new(module),
@@ -60,27 +64,47 @@ impl DyonRuntime {
         Self::from_source(&path.to_string_lossy(), &source)
     }
 
-    /// Runs the program's `main` function.
+    /// Runs the program's `main` function, then hosts any UI it registered.
     ///
-    /// A program that calls `ui_run` and cannot get a window on this session
-    /// fails with [`DyonError::NoWindow`] instead of a generic runtime error,
-    /// so a UI test can skip.
+    /// `ui_run` only registers a window; once `main` has returned this takes
+    /// that plan and starts the xui message loop with the Dyon runtime moved
+    /// into the app. A program that asks for a window on a session that cannot
+    /// create one fails with [`DyonError::NoWindow`] instead of a generic
+    /// runtime error, so a UI test can skip.
     pub fn run(&mut self) -> Result<(), DyonError> {
-        // Without the `ui` feature there is no window loop to observe, so the
-        // NoWindow classification is compiled out entirely.
+        #[cfg(feature = "ui")]
+        crate::ui::reset_status();
+
+        let result = self.runtime.run(&self.module).map_err(DyonError::runtime);
+        if result.is_err() {
+            // A failed `main` owns the error; discard any half-built plan.
+            #[cfg(feature = "ui")]
+            let _ = crate::ui::take_pending();
+            return result;
+        }
+
         #[cfg(feature = "ui")]
         {
-            crate::ui::reset_status();
-            let result = self.runtime.run(&self.module).map_err(DyonError::runtime);
-            if crate::ui::take_status() == crate::ui::UiStatus::NoWindow {
-                return Err(DyonError::NoWindow);
+            if let Some(pending) = crate::ui::take_pending() {
+                // Move the runtime and module into the app so a handler runs on
+                // a program that is no longer on this stack (no re-entrancy).
+                let runtime = std::mem::replace(&mut self.runtime, Runtime::new());
+                let module = Arc::clone(&self.module);
+                match crate::ui::run_host(pending, runtime, module) {
+                    Ok(()) => crate::ui::set_status(crate::ui::UiStatus::Ran),
+                    Err(crate::ui::HostError::NoWindow) => {
+                        crate::ui::set_status(crate::ui::UiStatus::NoWindow);
+                        return Err(DyonError::NoWindow);
+                    }
+                    Err(crate::ui::HostError::Failed(message)) => {
+                        return Err(DyonError::runtime(message));
+                    }
+                }
             }
-            result
+            let _ = crate::ui::take_status();
         }
-        #[cfg(not(feature = "ui"))]
-        {
-            self.runtime.run(&self.module).map_err(DyonError::runtime)
-        }
+
+        Ok(())
     }
 
     /// Calls a function by name without a return value.

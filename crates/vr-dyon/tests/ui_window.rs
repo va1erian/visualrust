@@ -4,11 +4,12 @@
 
 //! Integration test: a complete window built entirely from a Dyon script.
 //!
-//! The script calls `ui_window` / `ui_column` / `ui_label` / `ui_run`, so this
-//! exercises the plan objects round-tripping through the Dyon runtime and the
-//! widget tree being materialised inside `ui_run`. The window closes through
-//! `xui_DEMO_AUTOCLOSE_MS`, and a helper thread captures it with the
-//! `vr-tooling` harness so the test can inspect real pixels.
+//! The script calls `ui_window` / `ui_free` / `ui_label` / `ui_add` / `ui_run`,
+//! so this exercises the plan objects round-tripping through the Dyon runtime
+//! and the widget tree being materialised by the host once `main` has returned.
+//! The window closes through `xui_DEMO_AUTOCLOSE_MS`, and a helper thread
+//! captures it with the `vr-tooling` harness so the test can inspect real
+//! pixels.
 //!
 //! Follows xui's skip pattern: when this session cannot create a window the
 //! test prints `SKIP` and passes instead of failing.
@@ -16,25 +17,22 @@
 use std::time::Duration;
 
 use vr_dyon::{DyonError, DyonRuntime};
-use vr_tooling::{WindowSelector, capture_window, read_png};
+use vr_tooling::{WindowSelector, capture_window_rendered, read_png};
 
 /// Unique enough that the window lookup cannot hit an unrelated process.
 const TITLE: &str = "VisualRust Dyon ui smoke";
 
-/// A window with a nested layout, built only from Dyon.
+/// A window with two absolutely placed labels, built only from Dyon.
 const SCRIPT: &str = r#"
 fn main() {
     win := ui_window("VisualRust Dyon ui smoke", 520, 320)
-    root := ui_column([
-        ui_label("Hello from Dyon"),
-        ui_row([
-            ui_label("left"),
-            ui_label("right")
-        ]),
-        ui_column([
-            ui_label("nested")
-        ])
-    ])
+    root := ui_free(520, 320)
+    first := ui_label("Hello from Dyon", 16, 16, 300, 28)
+    ui_add(root, first)
+    ui_anchor(first, "top_left")
+    second := ui_label("Anchored at the top left", 16, 52, 300, 28)
+    ui_add(root, second)
+    ui_anchor(second, "top_left")
     ui_run(win, root)
 }
 "#;
@@ -56,10 +54,10 @@ fn dyon_script_builds_and_runs_a_window() {
     let path_for_thread = capture_path.clone();
     let capture = std::thread::spawn(move || {
         // Give the message loop time to show and paint the window, then keep
-        // retrying until the composited backend produces a frame.
-        std::thread::sleep(Duration::from_millis(500));
-        for _ in 0..10 {
-            if capture_window(WindowSelector::title(TITLE), &path_for_thread).is_ok() {
+        // retrying until the rendered backend produces a frame.
+        std::thread::sleep(Duration::from_millis(700));
+        for _ in 0..12 {
+            if capture_window_rendered(WindowSelector::title(TITLE), &path_for_thread).is_ok() {
                 return Some(path_for_thread);
             }
             std::thread::sleep(Duration::from_millis(150));
@@ -82,7 +80,7 @@ fn dyon_script_builds_and_runs_a_window() {
 
     let Some(path) = captured else {
         eprintln!(
-            "vr-dyon ui window test: window ran, but no capture was written (capture backend \
+            "vr-dyon ui window test: window ran, but no capture was written (rendered backend \
              unavailable)"
         );
         return;
