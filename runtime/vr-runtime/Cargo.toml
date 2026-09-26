@@ -9,6 +9,10 @@ repository.workspace = true
 win32ui.workspace = true
 vr-dyon.workspace = true
 thiserror.workspace = true
+# The self-read loader decodes the bundle appended to the executable and reads
+# its manifest, so both formats come from their owning crates.
+vr-core.workspace = true
+vr-pack = { path = "../../crates/vr-pack" }
 
 [build-dependencies]
 # Embeds the Common Controls v6 manifest into the test binaries; the hello-window
@@ -21,3 +25,5 @@ dyon.workspace = true
 # The hello-window e2e reads the sample manifest and captures the live window.
 vr-core.workspace = true
 vr-tooling = { path = "../../crates/vr-tooling" }
+# The embedded-run e2e builds a bundle to append to a copy of the stub.
+vr-pack = { path = "../../crates/vr-pack" }

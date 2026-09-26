@@ -960,6 +960,7 @@ dependencies = [
  "thiserror",
  "vr-core",
  "vr-dyon",
+ "vr-pack",
  "vr-tooling",
  "win32ui",
 ]
