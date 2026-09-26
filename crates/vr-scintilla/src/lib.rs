@@ -1,9 +1,9 @@
-﻿//! Safe Rust wrapper over the vendored Scintilla control.
+//! Safe Rust wrapper over the vendored Scintilla control.
 //!
 //! Everything the rest of the IDE needs from Scintilla goes through typed
 //! methods on [`Scintilla`] and the [`Scn`] notification enum, so callers never
 //! build a raw `SCI_*` message by hand. [`ScintillaHost`] embeds a control in a
-//! win32ui `Custom`, fills the pane on resize, routes `SCN_*` notifications and
+//! xui `Custom`, fills the pane on resize, routes `SCN_*` notifications and
 //! applies Dyon highlighting from `vr-syntax`.
 //!
 //! `unsafe` lives only in the private [`sys`] module, which wraps every raw

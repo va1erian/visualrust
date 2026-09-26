@@ -1,4 +1,4 @@
-//! Mapping win32ui [`Theme`] tokens onto Scintilla styles and chrome.
+//! Mapping xui [`Theme`] tokens onto Scintilla styles and chrome.
 //!
 //! Scintilla owns its own style table; there is no `Themed` hook for a foreign
 //! control, so the host applies a palette explicitly at creation and whenever
@@ -6,7 +6,7 @@
 //! handful of semantic tokens (`accent`, `warning`, `danger`, `text*`) so light
 //! and dark stay coherent rather than defining a second, drifting palette.
 
-use win32ui::Theme;
+use xui::Theme;
 
 use vr_syntax::{STYLE_COUNT, StyleKind};
 
@@ -32,8 +32,8 @@ pub(crate) struct Palette {
     caret: Color,
 }
 
-/// Converts a win32ui token colour to the wrapper's colour type.
-const fn color(token: win32ui::Color) -> Color {
+/// Converts a xui token colour to the wrapper's colour type.
+const fn color(token: xui::Color) -> Color {
     Color::rgb(token.r, token.g, token.b)
 }
 

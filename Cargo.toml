@@ -26,8 +26,9 @@ repository = "https://github.com/va1erian/visualrust"
 rust-version = "1.90"
 
 [workspace.dependencies]
-# win32ui is pre-1.0 and moves quickly: always pin a rev, never a branch.
-win32ui = { git = "https://github.com/va1erian/win32ui", rev = "01d1778caa5c35edc44dabb8002781670580b17e" }
+# xui is pre-1.0 and moves quickly: always pin a rev, never a branch.
+xui = { git = "https://github.com/va1erian/xui", rev = "cb0af9575186ab20f58d688654a7942cd096e87b" }
+xui-win32 = { git = "https://github.com/va1erian/xui", rev = "cb0af9575186ab20f58d688654a7942cd096e87b" }
 vr-core = { path = "crates/vr-core" }
 vr-db = { path = "crates/vr-db" }
 vr-dyon = { path = "crates/vr-dyon" }

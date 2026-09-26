@@ -61,7 +61,7 @@ fn ensure_registered() -> bool {
 /// A Scintilla control and, when this crate created it, the hidden host window
 /// that parents it.
 ///
-/// A control hosted inside a win32ui `Custom` has no host of its own: the
+/// A control hosted inside a xui `Custom` has no host of its own: the
 /// `Custom` owns the parent, `host` is `None`, and dropping the `Control`
 /// destroys only the child (which Win32 does anyway when the parent goes).
 pub(crate) struct Control {
@@ -142,7 +142,7 @@ impl Control {
     }
 
     /// Creates a visible `Scintilla` child of `parent`, or `None` when the
-    /// session cannot create windows. The caller (the win32ui `Custom` host)
+    /// session cannot create windows. The caller (the xui `Custom` host)
     /// owns `parent`; this `Control` never destroys it.
     pub(crate) fn create_parented(parent: *mut c_void) -> Option<Control> {
         if !ensure_registered() || parent.is_null() {
@@ -399,7 +399,7 @@ impl Control {
 impl Drop for Control {
     fn drop(&mut self) {
         // SAFETY: `self.hwnd` is a live control owned by this `Control`. A
-        // hosted control's parent is owned by the win32ui `Custom`, so it is
+        // hosted control's parent is owned by the xui `Custom`, so it is
         // not touched; the hidden host, when this crate created one, is
         // destroyed after the child, as Win32 requires.
         unsafe {

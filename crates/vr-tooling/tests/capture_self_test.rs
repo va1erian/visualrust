@@ -1,7 +1,7 @@
-//! Self-test: create a real win32ui window, capture it through the harness and
+//! Self-test: create a real xui window, capture it through the harness and
 //! write a PNG.
 //!
-//! Follows win32ui's skip pattern: if this session cannot create a window (for
+//! Follows xui's skip pattern: if this session cannot create a window (for
 //! example Windows Sandbox without a desktop, or a service session) the test
 //! prints a `SKIP` line and passes. Capture failures after a window exists are
 //! reported the same way, because the `Windows.Graphics.Capture` stack can be
@@ -12,7 +12,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use vr_tooling::{ToolingError, WindowSelector, capture_window};
-use win32ui::prelude::*;
+use xui::prelude::*;
 
 /// Captures once, on the first timer tick, then quits the loop.
 struct CaptureOnce {
@@ -26,7 +26,7 @@ impl WindowHandler for CaptureOnce {
             let result = capture_window(WindowSelector::hwnd(window.hwnd()), &self.out);
             *self.result.borrow_mut() = Some(result);
             window.destroy();
-            win32ui::quit(0);
+            xui::quit(0);
             return Some(0);
         }
         None
@@ -35,7 +35,7 @@ impl WindowHandler for CaptureOnce {
 
 #[test]
 fn captures_own_window_to_png() {
-    win32ui::init();
+    xui::init();
 
     let Ok(class) =
         WindowClass::register("vr-tooling-capture-self-test", Theme::light().background)
@@ -73,7 +73,7 @@ fn captures_own_window_to_png() {
         return;
     }
     window.show();
-    win32ui::run();
+    xui::run();
     window.destroy();
 
     match result.borrow_mut().take() {

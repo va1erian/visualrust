@@ -10,13 +10,13 @@ repository.workspace = true
 vr-scintilla-sys = { path = "../vr-scintilla-sys" }
 # The Dyon lexer that drives container-lexer highlighting; no Win32 in it.
 vr-syntax = { path = "../vr-syntax" }
-# The host widget is a win32ui `Custom`, so this crate now depends on the widget
+# The host widget is a xui `Custom`, so this crate now depends on the widget
 # layer for its `Custom`/`Theme`/`Ui` types. Pinned by the workspace rev.
-win32ui.workspace = true
+xui.workspace = true
 # So the widget can parent Scintilla to a `Custom` HWND and subclass that parent
 # to receive `SCN_*`. Features are the exact Win32 namespaces `sys` uses;
 # `Win32_UI_Shell` carries `SetWindowSubclass`/`DefSubclassProc`. The version
-# unifies with win32ui's own `windows` dependency.
+# unifies with xui's own `windows` dependency.
 windows = { version = "0.62", default-features = false, features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",
@@ -27,7 +27,7 @@ windows = { version = "0.62", default-features = false, features = [
 thiserror.workspace = true
 
 [dev-dependencies]
-# The integration test builds a real win32ui window and captures it; both crates
+# The integration test builds a real xui window and captures it; both crates
 # are already in the dependency graph, listed here so the test can name them.
-win32ui.workspace = true
+xui.workspace = true
 vr-tooling = { path = "../vr-tooling" }

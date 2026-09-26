@@ -1,7 +1,7 @@
 # AGENTS.md — VisualRust house rules
 
 VisualRust is a native Windows RAD IDE: built in Rust on
-[`win32ui`](https://github.com/va1erian/win32ui), apps are scripted in
+[`xui`](https://github.com/va1erian/xui), apps are scripted in
 [Dyon](https://github.com/PistonDevelopers/dyon), and projects export to
 self-contained `.exe` files. Read `docs/PLAN.md` for the architecture and the
 milestone map.
@@ -11,7 +11,7 @@ milestone map.
 - Windows only, `x86_64-pc-windows-msvc`, edition 2024.
 - A C++ toolchain (MSVC Build Tools) is required to build the vendored
   Scintilla sources in `vr-scintilla-sys`.
-- `win32ui` is pre-1.0: it is pinned by rev in the workspace `Cargo.toml`.
+- `xui` is pre-1.0: it is pinned by rev in the workspace `Cargo.toml`.
   Never change the pin to a branch, and never add a second version.
 
 ## Pre-submit checks
@@ -52,7 +52,7 @@ to the PR for both light and dark themes.
 - UI tests that grab focus or input run under the Windows Sandbox runner
   (`scripts/sandbox/run.ps1`) — see `docs/TESTING.md`.
 - Verify UI work programmatically before claiming it works: launch the app,
-  capture a PNG with `vr-tooling` (built on win32ui's composited capture), and
+  capture a PNG with `vr-tooling` (built on xui's composited capture), and
   look at it. An agent's opinion of its own rendering is not evidence.
 
 ## Git and PRs

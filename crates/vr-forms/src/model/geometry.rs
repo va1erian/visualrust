@@ -1,6 +1,6 @@
 //! Design units and layout primitives shared by every control.
 //!
-//! These are deliberately independent of `win32ui`: a `.vrform` is persisted
+//! These are deliberately independent of `xui`: a `.vrform` is persisted
 //! before any window exists and a form may be edited on a machine whose DPI
 //! differs from the one it was authored on. `Dip` is a device-independent
 //! design unit the designer scales at render time.

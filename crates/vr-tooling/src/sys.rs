@@ -2,14 +2,13 @@
 //! apartment setup.
 //!
 //! This is the only module allowed to use `unsafe`; every block carries a
-//! `// SAFETY:` note. Callers see only `win32ui` types, never `windows` ones.
+//! `// SAFETY:` note. Callers see only `xui` types, never `windows` ones.
 
 #![allow(unsafe_code)]
 
 use core::ffi::c_void;
 use core::mem::size_of;
 
-use win32ui::{Hwnd, RgbaImage};
 use windows::Win32::Foundation::{HWND, LPARAM, RECT};
 use windows::Win32::Graphics::Gdi::{
     BI_RGB, BITMAPINFO, BITMAPINFOHEADER, CreateCompatibleBitmap, CreateCompatibleDC,
@@ -22,6 +21,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     IsWindowVisible,
 };
 use windows::core::BOOL;
+use xui::{Hwnd, RgbaImage};
 
 /// `PW_RENDERFULLCONTENT`, from `WinUser.h`. The `windows` crate exports it as a
 /// bare `u32` in the messaging namespace, not as a `PRINT_WINDOW_FLAGS`, so it
@@ -30,7 +30,7 @@ const PW_RENDERFULLCONTENT: u32 = 2;
 
 /// An STA COM apartment guard for `Windows.Graphics.Capture`.
 ///
-/// win32ui does not initialise COM, but `capture_hwnd` needs an apartment on the
+/// xui does not initialise COM, but `capture_hwnd` needs an apartment on the
 /// calling thread. Initialisation is best-effort: if COM is already up under a
 /// different model the guard is inert, the composited capture fails and the
 /// caller falls back to `PrintWindow`, which needs no apartment.

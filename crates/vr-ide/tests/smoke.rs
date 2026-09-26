@@ -1,11 +1,11 @@
 //! Headless smoke test for the IDE shell.
 //!
-//! Runs the real shell in-process with `WIN32UI_DEMO_AUTOCLOSE_MS`, so it opens
+//! Runs the real shell in-process with `xui_DEMO_AUTOCLOSE_MS`, so it opens
 //! and quits itself, while a helper thread captures the live window through the
 //! `vr-tooling` harness and reports the PNG path and size. It runs once per
 //! palette so the light and dark renders are both evidenced.
 //!
-//! Follows win32ui's skip pattern: when the session cannot create a window (a
+//! Follows xui's skip pattern: when the session cannot create a window (a
 //! service session, or a Sandbox without a desktop) no capture is written and
 //! the test prints `SKIP` and passes instead of failing.
 //!
@@ -71,8 +71,8 @@ fn run_and_capture(palette: &str) -> Option<Capture> {
     // other test thread is running; the environment is set before the shell's
     // message loop starts and is not mutated while it runs.
     unsafe {
-        std::env::set_var("WIN32UI_DEMO_THEME", palette);
-        std::env::set_var("WIN32UI_DEMO_AUTOCLOSE_MS", AUTOCLOSE_MS);
+        std::env::set_var("xui_DEMO_THEME", palette);
+        std::env::set_var("xui_DEMO_AUTOCLOSE_MS", AUTOCLOSE_MS);
     }
 
     let path = std::env::temp_dir()
@@ -109,7 +109,7 @@ fn run_and_capture(palette: &str) -> Option<Capture> {
 
 /// Counts distinct RGB values, capped early: a rendered window is never one
 /// flat colour, while a blank capture is.
-fn distinct_colors(image: &win32ui::RgbaImage) -> usize {
+fn distinct_colors(image: &xui::RgbaImage) -> usize {
     let mut seen = std::collections::HashSet::new();
     for pixel in image.pixels.as_chunks::<4>().0 {
         seen.insert([pixel[0], pixel[1], pixel[2]]);

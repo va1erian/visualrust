@@ -2,7 +2,7 @@
 //!
 //! They create a real (hidden) Scintilla control. When the session cannot create
 //! a window — for example a non-interactive desktop — the test prints `SKIP` and
-//! passes, following win32ui's test pattern.
+//! passes, following xui's test pattern.
 
 use vr_scintilla::{AnnotationVisible, Color, IndicatorStyle, MarginType, MarkerSymbol, Scintilla};
 

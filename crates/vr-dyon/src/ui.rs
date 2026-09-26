@@ -1,4 +1,4 @@
-//! Native `ui_*` bindings: build and run a win32ui window entirely from Dyon.
+//! Native `ui_*` bindings: build and run a xui window entirely from Dyon.
 //!
 //! The Dyon-facing API is a small builder vocabulary:
 //!
@@ -16,12 +16,12 @@
 //! `ui_window` returns a window plan and `ui_label` / `ui_column` / `ui_row`
 //! return widget plans, each stored in the Dyon runtime as a custom object
 //! ([`dyon::RustObject`] = `Arc<Mutex<dyn Any>>`) exactly as the issue asks.
-//! They are *plans*, not live widgets, because win32ui only exposes a `Ui` to
-//! the closure passed to [`win32ui::run_app`]; the concrete `Label` children are
+//! They are *plans*, not live widgets, because xui only exposes a `Ui` to
+//! the closure passed to [`xui::run_app`]; the concrete `Label` children are
 //! created there, inside [`ui_run`], and kept alive by the app for the window's
-//! lifetime. `ui_run` blocks in the win32ui message loop until the window closes.
+//! lifetime. `ui_run` blocks in the xui message loop until the window closes.
 //!
-//! The loop ends on its own when a non-zero `WIN32UI_DEMO_AUTOCLOSE_MS`
+//! The loop ends on its own when a non-zero `xui_DEMO_AUTOCLOSE_MS`
 //! environment variable is set, which is how a headless test or example closes
 //! the window. [`UiStatus`] records whether a window was ever created so the
 //! runtime can turn "this session has no desktop" into [`DyonError::NoWindow`]
@@ -34,10 +34,10 @@ use std::sync::Arc;
 
 use dyon::embed::to_rust_object;
 use dyon::{Dfn, Module, Runtime, RustObject, Type, Variable};
-use win32ui::Rect;
+use xui::Rect;
 
 /// Environment variable that makes the window close itself, in milliseconds.
-const AUTOCLOSE_ENV: &str = "WIN32UI_DEMO_AUTOCLOSE_MS";
+const AUTOCLOSE_ENV: &str = "xui_DEMO_AUTOCLOSE_MS";
 /// Initial label bounds; the installed layout moves the label on the first
 /// relayout, but the first measure needs a non-zero natural height.
 const LABEL_BOUNDS: Rect = Rect::new(0, 0, 160, 24);
@@ -210,12 +210,12 @@ fn plan<T: Clone + 'static>(object: &RustObject) -> Result<T, String> {
         .ok_or_else(|| format!("expected a {} plan", std::any::type_name::<T>()))
 }
 
-/// Creates the win32ui window: the only place concrete widgets are built.
+/// Creates the xui window: the only place concrete widgets are built.
 mod host {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use win32ui::{App, IntoLayoutItem, Label, Layout, LayoutExt, LayoutItem, Ui, WindowSpec, dip};
+    use xui::{App, IntoLayoutItem, Label, Layout, LayoutExt, LayoutItem, Ui, WindowSpec, dip};
 
     use super::{AUTOCLOSE_ENV, LABEL_BOUNDS, STACK_SPACING, WidgetPlan, WindowPlan};
 
@@ -234,7 +234,7 @@ mod host {
         // so the error is parked here and read once the loop returns.
         let failure: Rc<RefCell<Option<HostError>>> = Rc::new(RefCell::new(None));
         let failure_in = Rc::clone(&failure);
-        let outcome = win32ui::run_app(spec, move |ui| build_app(ui, root, failure_in));
+        let outcome = xui::run_app(spec, move |ui| build_app(ui, root, failure_in));
         if let Some(error) = failure.borrow_mut().take() {
             return Err(error);
         }
@@ -316,7 +316,7 @@ mod host {
         Label::new(ui, LABEL_BOUNDS, text).map_err(classify)
     }
 
-    /// Arms `WIN32UI_DEMO_AUTOCLOSE_MS` so a headless run leaves on its own.
+    /// Arms `xui_DEMO_AUTOCLOSE_MS` so a headless run leaves on its own.
     fn arm_autoclose(ui: &mut Ui<()>) {
         let Some(millis) = std::env::var(AUTOCLOSE_ENV)
             .ok()
@@ -339,12 +339,12 @@ mod host {
     /// A window- or control-creation failure means the session cannot build the
     /// UI (no desktop, or common controls unavailable), which a test skips;
     /// every other error is a real failure.
-    fn classify(error: win32ui::Error) -> HostError {
+    fn classify(error: xui::Error) -> HostError {
         match error {
-            win32ui::Error::ClassRegistration { .. }
-            | win32ui::Error::CreateWindow { .. }
-            | win32ui::Error::CreateControl(_)
-            | win32ui::Error::ControlsUnavailable => HostError::NoWindow,
+            xui::Error::ClassRegistration { .. }
+            | xui::Error::CreateWindow { .. }
+            | xui::Error::CreateControl(_)
+            | xui::Error::ControlsUnavailable => HostError::NoWindow,
             other => HostError::Failed(other.to_string()),
         }
     }

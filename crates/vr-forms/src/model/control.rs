@@ -35,7 +35,7 @@ fn default_true() -> bool {
     true
 }
 
-/// Every win32ui widget family offered by the designer palette.
+/// Every xui widget family offered by the designer palette.
 ///
 /// Variants that need configuration carry a dedicated property struct; the
 /// plain widgets (`Button`, `Label`, `GroupBox`) are unit variants because all

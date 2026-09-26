@@ -1,24 +1,24 @@
-//! The win32ui host widget for a real Scintilla control.
+//! The xui host widget for a real Scintilla control.
 //!
-//! Scintilla draws itself, so the win32ui [`CustomWidget`] path here only owns
+//! Scintilla draws itself, so the xui [`CustomWidget`] path here only owns
 //! the parent `HWND`; the control is created as its child and resized to fill
 //! it. Notifications are Scintilla's own `SCN_*`: the control sends a
 //! `WM_NOTIFY` to its parent, which [`crate::sys`] subclasses, so this widget
-//! forwards decoded [`Scn`]s to the application without the win32ui
+//! forwards decoded [`Scn`]s to the application without the xui
 //! `CustomWidget::input` path.
 //!
 //! Dyon highlighting is the container-lexer path from `docs/PLAN.md`:
 //! `SCI_SETILEXER(NULL)` makes Scintilla ask for styles with
 //! `SCN_STYLENEEDED`; the handler restyles from `SCI_GETENDSTYLED` using the
 //! [`Lexer`] from `vr-syntax`, then `SCI_SETSTYLING`s the result. The widget
-//! maps the win32ui [`Theme`] to Scintilla styles with
+//! maps the xui [`Theme`] to Scintilla styles with
 //! [`crate::theme_map`].
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use win32ui::gdi::Canvas;
-use win32ui::{AsControl, Control, ControlExt, Custom, CustomWidget, Rect, Size, Theme, Ui};
+use xui::gdi::Canvas;
+use xui::{AsControl, Control, ControlExt, Custom, CustomWidget, Rect, Size, Theme, Ui};
 
 use vr_syntax::{Lexer, StyleKind};
 
@@ -27,7 +27,7 @@ use crate::sys::{NotificationSink, ParentSubclass};
 use crate::types::{MarginType, STYLE_DEFAULT, STYLE_LINENUMBER};
 use crate::{Error, Result, Scn, theme_map};
 
-/// The win32ui widget behind the hosted control.
+/// The xui widget behind the hosted control.
 ///
 /// It paints nothing: Scintilla is a child of this widget's window and covers
 /// it completely. `Event` names [`Scn`] for the widget vocabulary even though
@@ -49,9 +49,9 @@ impl CustomWidget for ScintillaWidget {
     }
 }
 
-/// A live Scintilla control hosted in a win32ui window.
+/// A live Scintilla control hosted in a xui window.
 ///
-/// Owns the win32ui `Custom` parent, the control parented to it, and the
+/// Owns the xui `Custom` parent, the control parented to it, and the
 /// notification subclass; dropping it removes the subclass, destroys the
 /// control and then the parent, and leaks nothing.
 pub struct ScintillaHost<M: 'static> {
@@ -68,7 +68,7 @@ impl<M: 'static> ScintillaHost<M> {
     /// Creates the host inside `ui`, with `on_event` mapping each [`Scn`] to
     /// the application's `Msg` (or `None` to ignore it).
     ///
-    /// Returns [`Error::CreateControl`] when the win32ui parent or the control
+    /// Returns [`Error::CreateControl`] when the xui parent or the control
     /// cannot be created — expected on a session without a desktop — and
     /// [`Error::SubclassParent`] if the parent cannot be subclassed.
     pub fn new(
@@ -126,7 +126,7 @@ impl<M: 'static> ScintillaHost<M> {
     }
 
     /// Re-applies `theme`'s palette to the control. Call this after
-    /// [`Ui::set_theme`]: the win32ui themed-children pass reaches the `Custom`
+    /// [`Ui::set_theme`]: the xui themed-children pass reaches the `Custom`
     /// parent but cannot know about the foreign control inside it.
     pub fn apply_theme(&self, theme: &Theme) {
         theme_map::apply(&self.editor, theme);

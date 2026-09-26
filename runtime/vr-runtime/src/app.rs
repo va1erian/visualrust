@@ -1,10 +1,10 @@
-//! The [`win32ui::App`] host that dispatches UI events to Dyon handlers.
+//! The [`xui::App`] host that dispatches UI events to Dyon handlers.
 
 use std::collections::HashMap;
 
 use thiserror::Error;
 use vr_dyon::{DyonError, DyonRuntime, Variable};
-use win32ui::{App, Ui};
+use xui::{App, Ui};
 
 /// A UI event slot a Dyon program can bind a handler function to.
 ///
@@ -62,7 +62,7 @@ impl HandlerMap {
 
 /// Calls the Dyon function bound to `event`.
 ///
-/// This is the whole dispatch step, kept free of win32ui types so it runs
+/// This is the whole dispatch step, kept free of xui types so it runs
 /// headless. It makes exactly one Dyon call and never pumps the message queue,
 /// so a caller inside `App::update` cannot re-enter Dyon through it.
 fn dispatch(
@@ -76,7 +76,7 @@ fn dispatch(
     invoker.invoke(function, &[]).map_err(DispatchError::from)
 }
 
-/// A packaged application: a compiled Dyon program hosted in a win32ui window.
+/// A packaged application: a compiled Dyon program hosted in a xui window.
 pub struct RuntimeApp {
     runtime: DyonRuntime,
     handlers: HandlerMap,

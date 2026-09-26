@@ -1,4 +1,4 @@
-//! End-to-end check that the win32ui host renders Dyon highlighting.
+//! End-to-end check that the xui host renders Dyon highlighting.
 //!
 //! It builds a real window with the [`ScintillaHost`], loads a representative
 //! Dyon snippet, lets the container lexer style it (a timer gives Scintilla
@@ -16,7 +16,7 @@ use std::rc::Rc;
 
 use vr_scintilla::{ScintillaHost, Scn};
 use vr_tooling::{WindowSelector, capture_window_rendered, read_png};
-use win32ui::prelude::*;
+use xui::prelude::*;
 
 /// A representative Dyon snippet with keywords, a declaration, a string,
 /// numbers and both comment forms, so several styles render at once.
@@ -98,7 +98,7 @@ fn run(theme: Theme, name: &str) -> Outcome {
         .size(dip(640.0), dip(420.0))
         .theme(theme);
 
-    let ran = win32ui::run_app(spec, move |ui| {
+    let ran = xui::run_app(spec, move |ui| {
         let host = match ScintillaHost::new(ui, |scn| Some(Msg::Scn(scn))) {
             Ok(host) => Some(host),
             Err(error) => {
@@ -165,7 +165,7 @@ fn run(theme: Theme, name: &str) -> Outcome {
 /// keyword (accent), string (warning), number (danger) and comment
 /// (text_secondary).
 fn expected_colors(theme: &Theme) -> [[u8; 3]; 4] {
-    let rgb = |color: win32ui::Color| [color.r, color.g, color.b];
+    let rgb = |color: xui::Color| [color.r, color.g, color.b];
     [
         rgb(theme.accent),
         rgb(theme.warning),
@@ -176,7 +176,7 @@ fn expected_colors(theme: &Theme) -> [[u8; 3]; 4] {
 
 #[test]
 fn host_renders_dyon_highlighting_in_light_and_dark() {
-    win32ui::init();
+    xui::init();
 
     let mut captured = 0usize;
     for (name, theme) in [("light", Theme::light()), ("dark", Theme::dark())] {

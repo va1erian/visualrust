@@ -2,6 +2,6 @@
 
 // Common Controls v6 + per-monitor-v2 DPI for the vr-ide binary and its tests.
 // The shell's toolbar and status bar are common-controls children and the app
-// window itself is a win32ui window; without the v6 manifest
+// window itself is a xui window; without the v6 manifest
 // `InitCommonControlsEx` fails and no control can be created.
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "vr-ide.manifest"

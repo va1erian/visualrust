@@ -1,6 +1,6 @@
 //! Embeds the Common Controls v6 manifest into `vr-runtime`'s test binaries, the
 //! same way `vr-dyon` and `vr-ide` do for theirs: the hello-window sample builds
-//! real win32ui controls through the `ui_*` bindings, and without the manifest
+//! real xui controls through the `ui_*` bindings, and without the manifest
 //! `InitCommonControlsEx` fails and no control can be created.
 
 fn main() {

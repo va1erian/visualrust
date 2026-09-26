@@ -16,7 +16,7 @@ serde_json.workspace = true
 dyon.workspace = true
 # Written out rather than `workspace = true`: Cargo forbids a member from
 # turning off the workspace's default features, and `default-features = false`
-# is what keeps the win32ui `ui` bindings out of a headless web server.
+# is what keeps the xui `ui` bindings out of a headless web server.
 vr-dyon = { path = "../vr-dyon", default-features = false }
 # Optional so the default web build stays free of bundled SQLite. The `sqlite`
 # feature below turns it on and exposes `WebRuntime::start_with_sqlite`, which
