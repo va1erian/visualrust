@@ -2,11 +2,14 @@
 //!
 //! Each wrapper pops its arguments in reverse declaration order (Dyon pushes
 //! them left to right). The domain-checked commands render their
-//! [`MathError`] as a Dyon error string; the rest cannot fail. Registering
-//! these overrides Dyon's own prelude names (`sqrt`, `sin`, `min`, ...) so the
-//! documented semantics win for a program that passed [`vr_std::register`].
+//! [`MathError`] as a Dyon error string; the rest cannot fail.
 //!
-//! [`vr_std::register`]: crate::register
+//! Dyon resolves a call by name only, so every command that shares a name with
+//! a Dyon built-in (`abs`, `sqrt`, `min`, `random`, ...) registers under a
+//! `num_` prefix. Registering the bare name would shadow the built-in for
+//! every later script, including `min`/`max` used as loop forms; see #104.
+//! Commands Dyon does not define (`sign`, `int`, `random_seed`) are left with
+//! their PureBasic names.
 
 use dyon::{Dfn, Module, Runtime, Type, Variable};
 
@@ -145,33 +148,33 @@ pub(crate) fn register(module: &mut Module) {
     let mut unary_fn = |name: &str, f: fn(&mut Runtime) -> Result<Variable, String>| {
         module.add_str(name, f, Dfn::nl(vec![Type::F64], Type::F64));
     };
-    unary_fn("abs", native_abs);
+    unary_fn("num_abs", native_abs);
     unary_fn("sign", native_sign);
     unary_fn("int", native_int);
-    unary_fn("round", native_round);
-    unary_fn("floor", native_floor);
-    unary_fn("ceil", native_ceil);
-    unary_fn("sqrt", native_sqrt);
-    unary_fn("sin", native_sin);
-    unary_fn("cos", native_cos);
-    unary_fn("tan", native_tan);
-    unary_fn("asin", native_asin);
-    unary_fn("acos", native_acos);
-    unary_fn("atan", native_atan);
-    unary_fn("ln", native_ln);
-    unary_fn("log10", native_log10);
-    unary_fn("log2", native_log2);
-    unary_fn("exp", native_exp);
+    unary_fn("num_round", native_round);
+    unary_fn("num_floor", native_floor);
+    unary_fn("num_ceil", native_ceil);
+    unary_fn("num_sqrt", native_sqrt);
+    unary_fn("num_sin", native_sin);
+    unary_fn("num_cos", native_cos);
+    unary_fn("num_tan", native_tan);
+    unary_fn("num_asin", native_asin);
+    unary_fn("num_acos", native_acos);
+    unary_fn("num_atan", native_atan);
+    unary_fn("num_ln", native_ln);
+    unary_fn("num_log10", native_log10);
+    unary_fn("num_log2", native_log2);
+    unary_fn("num_exp", native_exp);
 
     let mut binary_fn = |name: &str, f: fn(&mut Runtime) -> Result<Variable, String>| {
         module.add_str(name, f, Dfn::nl(vec![Type::F64, Type::F64], Type::F64));
     };
-    binary_fn("pow", native_pow);
-    binary_fn("atan2", native_atan2);
-    binary_fn("min", native_min);
-    binary_fn("max", native_max);
+    binary_fn("num_pow", native_pow);
+    binary_fn("num_atan2", native_atan2);
+    binary_fn("num_min", native_min);
+    binary_fn("num_max", native_max);
 
-    module.add_str("random", native_random, Dfn::nl(vec![], Type::F64));
+    module.add_str("num_random", native_random, Dfn::nl(vec![], Type::F64));
     module.add_str(
         "random_seed",
         native_random_seed,

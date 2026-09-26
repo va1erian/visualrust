@@ -66,10 +66,11 @@ fn run(dir: str) -> str {
     delete_directory(sub)
 
     return contents +
-        "|" + str(size) +
+        "|" + num_str(size) +
         "|" + (if at_end { "eof" } else { "open" }) +
-        "|" + str(data[0]) + str(data[1]) +
-        "|" + str(copied) +
+        "|" + num_str(data[0]) + num_str(data[1]) +
+        "|" + num_str(copied) +
+        "|" + num_str(len(entries)) +
         "|" + entries[1].name +
         "|" + get_path_part(text_path, "name") +
         "|" + get_path_part(text_path, "ext")
@@ -88,9 +89,8 @@ fn dyon_script_uses_the_file_library() {
 
     // At examine time the directory holds `blob.bin`, `note.txt` and `sub`
     // (sorted), so index 1 is `note.txt`; `copy.txt` was already deleted.
-    // `len` is deliberately not used: the string library's `len` registration
-    // replaces Dyon's array `len` once this module is registered.
-    assert_eq!(result, "VisualRust|10|eof|8682|10|note.txt|note.txt|txt");
+    // `len(entries)` exercises Dyon's own array `len`, which #104 keeps alive.
+    assert_eq!(result, "VisualRust|10|eof|8682|10|3|note.txt|note.txt|txt");
     assert!(!Path::new(&temp.path.join("copy.txt")).exists());
     assert!(!Path::new(&temp.path.join("sub")).exists());
 }

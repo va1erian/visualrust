@@ -1,36 +1,36 @@
 //! A Dyon script exercises several math commands through the shared runtime,
 //! proving `vr_std::register` wires them into `from_source_with`.
 //!
-//! Only commands with an exactly representable result are concatenated with
-//! `str`; `sqrt(2)` goes through `format` so the fractional digits are stable.
+//! Every command that shares a Dyon built-in name registers under a `num_`
+//! prefix; see #104. Unexported `str` calls use Dyon's own built-in, and
+//! `sqrt(2)` goes through `format` so the fractional digits are stable.
 
 use vr_dyon::DyonRuntime;
 
 const SCRIPT: &str = r#"
 fn run() -> str {
-    return str(abs(-3.5)) +
-        "|" + str(sign(-2)) +
-        "|" + str(sign(0)) +
-        "|" + str(int(-3.9)) +
-        "|" + str(round(2.5)) +
-        "|" + str(floor(-1.5)) +
-        "|" + str(ceil(1.2)) +
-        "|" + str(pow(2, 10)) +
-        "|" + format(sqrt(2), 4) +
-        "|" + str(atan2(0, 1)) +
-        "|" + str(exp(0)) +
-        "|" + str(ln(1)) +
-        "|" + str(log10(1000)) +
-        "|" + str(log2(8)) +
-        "|" + str(min(3, 7)) +
-        "|" + str(max(3, 7)) +
-        "|" + str(sin(0)) +
-        "|" + str(cos(0)) +
-        "|" + str(atan(0)) +
-        "|" + str(asin(0)) +
-        "|" + str(acos(1))
+    return num_str(num_abs(-3.5)) +
+        "|" + num_str(sign(-2)) +
+        "|" + num_str(sign(0)) +
+        "|" + num_str(int(-3.9)) +
+        "|" + num_str(num_round(2.5)) +
+        "|" + num_str(num_floor(-1.5)) +
+        "|" + num_str(num_ceil(1.2)) +
+        "|" + num_str(num_pow(2, 10)) +
+        "|" + format(num_sqrt(2), 4) +
+        "|" + num_str(num_atan2(0, 1)) +
+        "|" + num_str(num_exp(0)) +
+        "|" + num_str(num_ln(1)) +
+        "|" + num_str(num_log10(1000)) +
+        "|" + num_str(num_log2(8)) +
+        "|" + num_str(num_min(3, 7)) +
+        "|" + num_str(num_max(3, 7)) +
+        "|" + num_str(num_sin(0)) +
+        "|" + num_str(num_cos(0)) +
+        "|" + num_str(num_atan(0)) +
+        "|" + num_str(num_asin(0)) +
+        "|" + num_str(num_acos(1))
 }
-
 fn main() {}
 "#;
 
@@ -49,7 +49,7 @@ fn dyon_script_uses_the_math_library() {
 fn a_domain_violation_surfaces_as_a_runtime_error() {
     let source = r#"
 fn run() -> f64 {
-    return sqrt(-1)
+    return num_sqrt(-1)
 }
 fn main() {}
 "#;
@@ -64,7 +64,7 @@ fn seeded_random_is_reproducible_through_dyon() {
     let source = r#"
 fn run() -> str {
     random_seed(123)
-    return str(random()) + "|" + str(random()) + "|" + str(random())
+    return num_str(num_random()) + "|" + num_str(num_random()) + "|" + num_str(num_random())
 }
 fn main() {}
 "#;

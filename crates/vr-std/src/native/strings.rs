@@ -193,9 +193,10 @@ fn native_rset(rt: &mut Runtime) -> Result<Variable, String> {
 /// Registers the string commands into `module`.
 ///
 /// Must run before source is loaded so Dyon's lifetime checker sees the
-/// signatures. Several names (`trim`, `str`, `len`) also exist as Dyon
-/// built-ins; Dyon resolves a later registration first, so the PureBasic
-/// semantics win for a program that passed this `register`.
+/// signatures. Dyon resolves a call by name only, so a command sharing a name
+/// with a built-in would shadow it for every later script (`len(array)`,
+/// `str(any)`, `trim(str)`). The three that would collide register as
+/// `str_len`, `num_str` and `str_trim`; the rest keep their PureBasic names.
 pub(crate) fn register(module: &mut Module) {
     module.add_str(
         "left",
@@ -212,7 +213,7 @@ pub(crate) fn register(module: &mut Module) {
         native_mid,
         Dfn::nl(vec![Type::Str, Type::F64, Type::F64], Type::Str),
     );
-    module.add_str("len", native_len, Dfn::nl(vec![Type::Str], Type::F64));
+    module.add_str("str_len", native_len, Dfn::nl(vec![Type::Str], Type::F64));
     module.add_str("ucase", native_ucase, Dfn::nl(vec![Type::Str], Type::Str));
     module.add_str("lcase", native_lcase, Dfn::nl(vec![Type::Str], Type::Str));
     module.add_str(
@@ -225,7 +226,7 @@ pub(crate) fn register(module: &mut Module) {
         native_replace_string,
         Dfn::nl(vec![Type::Str, Type::Str, Type::Str], Type::Str),
     );
-    module.add_str("trim", native_trim, Dfn::nl(vec![Type::Str], Type::Str));
+    module.add_str("str_trim", native_trim, Dfn::nl(vec![Type::Str], Type::Str));
     module.add_str("ltrim", native_ltrim, Dfn::nl(vec![Type::Str], Type::Str));
     module.add_str("rtrim", native_rtrim, Dfn::nl(vec![Type::Str], Type::Str));
     module.add_str(
@@ -250,7 +251,7 @@ pub(crate) fn register(module: &mut Module) {
     );
     module.add_str("space", native_space, Dfn::nl(vec![Type::F64], Type::Str));
     module.add_str("val", native_val, Dfn::nl(vec![Type::Str], Type::F64));
-    module.add_str("str", native_str, Dfn::nl(vec![Type::F64], Type::Str));
+    module.add_str("num_str", native_str, Dfn::nl(vec![Type::F64], Type::Str));
     module.add_str(
         "hex",
         native_hex,
