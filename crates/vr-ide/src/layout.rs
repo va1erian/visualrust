@@ -1,48 +1,59 @@
 //! The shell's layout tree: explorer | central pane, with the output pane
-//! stacked under the centre. The toolbar and status bar bracket the whole
-//! column, as before.
+//! stacked under the centre and the property inspector under the explorer.
 //!
-//! The explorer and the output pane are always present; the central pane is the
-//! editor by default and the designer surface when design mode is on. The
-//! designer is not a layout node — see [`crate::designer`] — so it is not built
-//! here; design mode simply hides the editor, and the surface's own nodes draw
-//! over the central area.
+//! The explorer, output and inspector panes are always present; the central
+//! pane is the editor by default and the real form designer when design mode is
+//! on. Exactly one of the editor and the designer is visible, so the visible one
+//! fills the slot.
 
 use xui::prelude::*;
 
 use crate::Msg;
 use crate::designer::DesignPane;
+use crate::inspector::PropertyInspector;
 use crate::output::OutputPane;
 
 /// The explorer's starting width, in design units.
 const EXPLORER_WIDTH: f64 = 220.0;
+/// The property inspector's height, in design units, when design mode is on.
+const INSPECTOR_HEIGHT: f32 = 430.0;
 
-/// Builds the column, skipping a bar that failed to create.
-pub(crate) fn build(
-    toolbar: &Option<Toolbar<Msg>>,
-    explorer: &Option<TreeView<usize, Msg>>,
-    editor: &Option<vr_scintilla::ScintillaHost<Msg>>,
-    output: &Option<OutputPane>,
-    design: &Option<DesignPane>,
-    status: &Option<StatusBar<Msg>>,
-    central_height: Dip,
-) -> Layout {
-    // A missing pane degrades to an empty layout that still absorbs its slot,
-    // so the remaining panes keep their edges.
-    let left = match explorer {
-        Some(tree) => tree.fill(1),
-        None => Layout::column().fill(1),
-    };
-    // The editor and the design pane share the centre; exactly one is visible,
-    // and a hidden item takes no space, so the visible one fills the slot.
+/// The widgets the shell builds, so a pane that failed to create can be `None`
+/// without the builder taking eight arguments.
+pub(crate) struct Panes<'a> {
+    pub toolbar: &'a Option<Toolbar<Msg>>,
+    pub explorer: &'a Option<TreeView<usize, Msg>>,
+    pub editor: &'a Option<vr_scintilla::ScintillaHost<Msg>>,
+    pub output: &'a Option<OutputPane>,
+    pub design: &'a Option<DesignPane>,
+    pub inspector: &'a Option<PropertyInspector>,
+    pub status: &'a Option<StatusBar<Msg>>,
+}
+
+/// Builds the column, skipping a bar or pane that failed to create.
+pub(crate) fn build(panes: Panes<'_>, central_height: Dip) -> Layout {
+    // The left column stacks the explorer over the inspector; a missing pane
+    // degrades to an empty layout that still absorbs its slot, so the remaining
+    // panes keep their edges.
+    let mut left = Layout::column();
+    match panes.explorer {
+        Some(tree) => left = left.item(tree.fill(1)),
+        None => left = left.item(Layout::column().fill(1)),
+    }
+    if let Some(pane) = panes.inspector {
+        left = left.item(pane.height(dip(INSPECTOR_HEIGHT)));
+    }
+
+    // The editor and the design pane share the centre; a hidden item takes no
+    // space, so the visible one fills the slot.
     let mut central = Layout::column();
-    if let Some(host) = editor {
+    if let Some(host) = panes.editor {
         central = central.item(host.fill(1));
     }
-    if let Some(pane) = design {
+    if let Some(pane) = panes.design {
         central = central.item(pane.fill(1));
     }
-    let bottom = match output {
+    let bottom = match panes.output {
         Some(pane) => pane.fill(1),
         None => Layout::column().fill(1),
     };
@@ -54,11 +65,11 @@ pub(crate) fn build(
     let body = split_row![left, centre].position(dip(EXPLORER_WIDTH as f32));
 
     let mut layout = Layout::column();
-    if let Some(bar) = toolbar {
+    if let Some(bar) = panes.toolbar {
         layout = layout.item(bar);
     }
     layout = layout.item(body);
-    if let Some(bar) = status {
+    if let Some(bar) = panes.status {
         layout = layout.item(bar);
     }
     layout

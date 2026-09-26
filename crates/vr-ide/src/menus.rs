@@ -26,9 +26,38 @@ pub(crate) fn menu_bar(state: &crate::IdeState) -> Menu<Msg> {
         .submenu("&File", file())
         .submenu("&Edit", edit())
         .submenu("&View", view(state))
+        .submenu("&Form", form())
         .submenu("&Build", build())
         .submenu("&Run", run())
         .submenu("&Help", help())
+}
+
+/// The palette and the design commands, in the order [`PALETTE`](crate::designer::PALETTE)
+/// declares so the menu and the model agree.
+fn form() -> Menu<Msg> {
+    let mut menu = Menu::new();
+    for kind in crate::designer::PALETTE {
+        let label = format!("Add {}", kind_label(kind));
+        menu = menu.item(label.as_str(), None, move || Msg::AddControl(kind));
+    }
+    menu.separator()
+        .item("&Resize Form to Pane", None, || Msg::ResizeFormToPane)
+}
+
+/// The menu caption for a palette entry.
+fn kind_label(kind: crate::msg::PaletteKind) -> &'static str {
+    use crate::msg::PaletteKind;
+    match kind {
+        PaletteKind::Button => "&Button",
+        PaletteKind::Label => "&Label",
+        PaletteKind::Edit => "&Edit",
+        PaletteKind::CheckBox => "&CheckBox",
+        PaletteKind::ComboBox => "&ComboBox",
+        PaletteKind::ProgressBar => "&ProgressBar",
+        PaletteKind::Slider => "&Slider",
+        PaletteKind::GroupBox => "&GroupBox",
+        PaletteKind::RadioGroup => "&RadioGroup",
+    }
 }
 
 fn file() -> Menu<Msg> {

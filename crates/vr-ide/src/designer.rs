@@ -1,122 +1,188 @@
-//! Design mode: the central form pane.
+//! Design mode: the central pane hosting the real [`FormDesigner`].
 //!
-//! ## Why this is a preview, not the live `DesignerSurface`
-//!
-//! `vr_forms::designer::DesignerSurface` is built against `xui_core::Ui` (the
-//! portable core app), while the IDE shell uses `xui_win32::Ui` (the native
-//! control app). The two `Ui` types are distinct in the pinned xui rev, so the
-//! surface cannot be constructed from the shell's window. Follow-up work is to
-//! converge the apps (or expose a bridge) in xui; until then design mode renders
-//! the selected [`Form`] model in a themed read-only pane.
-//!
-//! ## Why design mode is a mode anyway
-//!
-//! The designer could not be a `tabs!` page even once the types converge:
-//! `DesignerSurface::new` calls `Ui::set_design_mode(true)` on the whole window,
-//! which makes *every* widget ignore its own input, so the editor and the
-//! designer are mutually exclusive. Leaving design mode restores the editor.
+//! The designer from `vr-forms` is built on `xui`'s native widget layer, so it
+//! can be dropped straight into this shell's `xui_win32` app as a layout item
+//! (`FormDesigner: AsControl`). Design mode remains a *mode*, not a tab: the
+//! editor and the designer share the central slot and only the visible one
+//! occupies space.
 
-use vr_forms::Form;
+use vr_forms::design::{DesignerError, DesignerEvent, FormDesigner, PropertyValue};
+use vr_forms::model::{ChoiceProps, ComboBoxProps};
+use vr_forms::{Anchor, ControlKind, Dip, Form, Size};
 use xui::prelude::*;
 
 use crate::Msg;
+use crate::msg::PaletteKind;
 
-/// A read-only pane that renders the form model on screen in design mode.
+/// The design grid step, in design units.
+pub const GRID_DIP: f64 = 8.0;
+
+/// The central form-designer pane.
+///
+/// It is a thin owner of the `vr-forms` [`FormDesigner`], keeping the shell's
+/// message type in one place and giving the layout a stable `AsControl`.
 pub struct DesignPane {
-    edit: Edit<Msg>,
+    designer: FormDesigner<Msg>,
 }
 
 impl DesignPane {
-    /// Creates the pane as a child of the window behind `ui`.
-    pub fn new(ui: &mut Ui<Msg>) -> xui::Result<DesignPane> {
-        let edit = Edit::multi_line(ui)?.read_only(true);
-        Ok(DesignPane { edit })
+    /// Hosts `form` as the central designer.
+    pub fn new(ui: &mut Ui<Msg>, form: Form) -> std::result::Result<DesignPane, DesignerError> {
+        let designer = FormDesigner::new(ui, form, Dip::new(GRID_DIP))?;
+        Ok(DesignPane { designer })
     }
 
-    /// Replaces the pane's text.
-    pub fn set_text(&self, text: &str) {
-        self.edit.set_text(text);
+    /// Maps designer events to the shell's messages.
+    pub fn on_change(&mut self, mapper: impl Fn(DesignerEvent) -> Option<Msg> + 'static) {
+        self.designer.on_change(mapper);
+    }
+
+    /// The current form model.
+    pub fn form(&self) -> Form {
+        self.designer.form()
+    }
+
+    /// Replaces the form; an invalid model is refused rather than put on screen.
+    pub fn try_set_form(&mut self, form: Form) -> std::result::Result<(), DesignerError> {
+        self.designer.try_set_form(form)
+    }
+
+    /// Selects a control (or clears the selection).
+    pub fn select(&self, index: Option<usize>) {
+        self.designer.select(index);
+    }
+
+    /// The selected control's index, if any.
+    pub fn selected(&self) -> Option<usize> {
+        self.designer.selected()
+    }
+
+    /// Appends a control of `kind`, selects it and returns its index.
+    pub fn add_control(&mut self, kind: ControlKind) -> usize {
+        self.designer.add_control(kind)
+    }
+
+    /// Writes a property of the selected control, returning whether it applied.
+    pub fn set_property(&mut self, name: &str, value: PropertyValue) -> bool {
+        self.designer.set_property(name, value)
+    }
+
+    /// Re-anchors the selected control, keeping the selection.
+    ///
+    /// The designer's property palette has no anchor key, so the anchor is
+    /// changed by rebuilding the model and re-selecting. A failed validation
+    /// leaves the model as it was.
+    pub fn set_anchor(&mut self, anchor: Anchor) -> bool {
+        let Some(index) = self.selected() else {
+            return false;
+        };
+        let mut form = self.form();
+        match form.controls.as_mut_slice().get_mut(index) {
+            Some(control) => control.anchor = anchor,
+            None => return false,
+        }
+        if self.try_set_form(form).is_err() {
+            return false;
+        }
+        self.select(Some(index));
+        true
+    }
+
+    /// Anchors every control for a form resize to `new_size`.
+    pub fn resize_form(&mut self, new_size: Size) {
+        self.designer.resize_form(new_size);
     }
 }
 
 impl AsControl for DesignPane {
     fn control(&self) -> &Control {
-        self.edit.control()
+        self.designer.control()
     }
 }
 
-/// Renders a form (or the empty selection) as the design pane's text.
-pub fn render(form: Option<&Form>) -> String {
-    let mut lines: Vec<String> = vec![
-        "Form Designer".to_owned(),
-        "The live xui DesignerSurface is not available in this shell: its \
-         xui_core::Ui differs from the shell's xui_win32::Ui. This pane renders \
-         the form model instead."
-            .to_owned(),
-        String::new(),
-    ];
-    match form {
-        Some(form) => {
-            lines.push(format!(
-                "{}  ({} x {})",
-                form.name,
-                form.size.width.get(),
-                form.size.height.get()
-            ));
-            lines.push(format!("{} control(s)", form.controls.len()));
-            lines.push(String::new());
-            for (index, control) in form.controls.iter().enumerate() {
-                let bounds = &control.bounds;
-                lines.push(format!(
-                    "[{index}] {} `{}`  at ({}, {})  {} x {}{}",
-                    control.kind.tag(),
-                    control.name,
-                    bounds.x.get(),
-                    bounds.y.get(),
-                    bounds.width.get(),
-                    bounds.height.get(),
-                    text_suffix(&control.text),
-                ));
-            }
-        }
-        None => lines.push("No form selected".to_owned()),
+/// The concrete model kind a palette entry adds, with defaults for the settings
+/// a fresh control needs but the palette does not ask about.
+pub fn control_kind(kind: PaletteKind) -> ControlKind {
+    match kind {
+        PaletteKind::Button => ControlKind::Button,
+        PaletteKind::Label => ControlKind::Label,
+        PaletteKind::Edit => ControlKind::Edit(Default::default()),
+        PaletteKind::CheckBox => ControlKind::CheckBox(Default::default()),
+        PaletteKind::ComboBox => ControlKind::ComboBox(ComboBoxProps {
+            items: vec!["Item 1".to_owned()],
+            selected: None,
+            editable: false,
+        }),
+        PaletteKind::ProgressBar => ControlKind::ProgressBar(Default::default()),
+        PaletteKind::Slider => ControlKind::Slider(Default::default()),
+        PaletteKind::GroupBox => ControlKind::GroupBox,
+        // A radio group must own at least one option to be a valid model, so a
+        // fresh one starts with two rather than an empty (unvalidatable) list.
+        PaletteKind::RadioGroup => ControlKind::RadioGroup(ChoiceProps {
+            items: vec!["Option 1".to_owned(), "Option 2".to_owned()],
+            selected: None,
+        }),
     }
-    lines.join("\r\n")
 }
 
-/// Appends a quoted caption to a preview line when the control carries text.
-fn text_suffix(text: &str) -> String {
-    if text.is_empty() {
-        String::new()
-    } else {
-        format!("  \"{text}\"")
-    }
-}
+/// Every palette entry, in menu order, so the Form menu and the tests agree.
+pub const PALETTE: [PaletteKind; 9] = [
+    PaletteKind::Button,
+    PaletteKind::Label,
+    PaletteKind::Edit,
+    PaletteKind::CheckBox,
+    PaletteKind::ComboBox,
+    PaletteKind::ProgressBar,
+    PaletteKind::Slider,
+    PaletteKind::GroupBox,
+    PaletteKind::RadioGroup,
+];
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn an_empty_selection_renders_a_placeholder() {
-        let text = render(None);
-        assert!(text.contains("No form selected"));
+    fn every_palette_entry_maps_to_its_model_tag() {
+        let cases = [
+            (PaletteKind::Button, "button"),
+            (PaletteKind::Label, "label"),
+            (PaletteKind::Edit, "edit"),
+            (PaletteKind::CheckBox, "check_box"),
+            (PaletteKind::ComboBox, "combo_box"),
+            (PaletteKind::ProgressBar, "progress_bar"),
+            (PaletteKind::Slider, "slider"),
+            (PaletteKind::GroupBox, "group_box"),
+            (PaletteKind::RadioGroup, "radio_group"),
+        ];
+        for (palette, tag) in cases {
+            assert_eq!(control_kind(palette).tag(), tag);
+        }
     }
 
     #[test]
-    fn a_form_lists_its_name_and_controls() {
-        let form = crate::explorer::sample_form();
-        let text = render(Some(&form));
-        assert!(text.contains("SampleForm"));
-        assert!(text.contains("Greet"));
-        assert!(text.contains("control(s)"));
-    }
-
-    #[test]
-    fn the_form_size_renders_in_design_units() {
-        let form = crate::explorer::sample_form();
-        assert!(form.size.width.get() > 0.0);
-        let text = render(Some(&form));
-        assert!(text.contains(&form.size.width.get().to_string()));
+    fn a_palette_control_validates_inside_the_sample_form() {
+        let mut form = crate::explorer::sample_form();
+        for (index, palette) in PALETTE.iter().enumerate() {
+            // Add at a free strip so the newly appended control stays inside
+            // the form and the whole model still validates.
+            let kind = control_kind(*palette);
+            form.controls.push(vr_forms::Control {
+                kind,
+                name: format!("Added{index}"),
+                bounds: vr_forms::Bounds {
+                    x: Dip::new(8.0),
+                    y: Dip::new(8.0),
+                    width: Dip::new(40.0),
+                    height: Dip::new(16.0),
+                },
+                text: String::new(),
+                enabled: true,
+                visible: true,
+                tooltip: None,
+                anchor: Anchor::TopLeft,
+            });
+        }
+        form.validate().expect("every palette kind validates");
     }
 }
