@@ -72,17 +72,42 @@ pub struct Bounds {
 }
 
 /// Where a control sticks when its parent is resized.
+///
+/// The nine point variants pin the control's size and place one of its corners,
+/// edges or centre at the matching point of the parent. The three stretch
+/// variants pin two or four edges instead, so the control grows with the parent
+/// along that axis; they carry the same serde names a hand-written manifest
+/// would use and leave the original nine tags unchanged, so existing `.vrform`
+/// files keep parsing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Anchor {
+    /// Top-left corner pinned; position and size are fixed.
     #[default]
     TopLeft,
+    /// Top edge pinned, horizontally centred.
     Top,
+    /// Top-right corner pinned; the right edge follows the parent.
     TopRight,
+    /// Left edge pinned, vertically centred.
     Left,
+    /// Centre pinned; the control drifts with the parent's centre.
     Center,
+    /// Right edge pinned, vertically centred.
     Right,
+    /// Bottom-left corner pinned; the bottom edge follows the parent.
     BottomLeft,
+    /// Bottom edge pinned, horizontally centred.
     Bottom,
+    /// Bottom-right corner pinned; both edges follow the parent.
     BottomRight,
+    /// Left and right edges pinned: the width tracks the parent and the
+    /// vertical offset is fixed.
+    StretchHorizontal,
+    /// Top and bottom edges pinned: the height tracks the parent and the
+    /// horizontal offset is fixed.
+    StretchVertical,
+    /// All four edges pinned: the control stretches on both axes as the parent
+    /// resizes.
+    Fill,
 }

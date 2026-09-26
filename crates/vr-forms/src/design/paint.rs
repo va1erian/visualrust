@@ -30,26 +30,22 @@ pub(crate) fn paint(
     theme: &Theme,
     state: &DesignerState,
     font: Option<&Font>,
+    dpi: u32,
 ) {
     canvas.fill_rect(bounds, theme.background);
-    let page = size_to_rect(state.form.size, state.dpi);
+    let page = size_to_rect(state.form.size, dpi);
     canvas.fill_rect(page, theme.raised);
-    paint_grid(canvas, theme, page, state.grid, state.dpi);
+    paint_grid(canvas, theme, page, state.grid, dpi);
 
     for control in &state.form.controls {
-        let rect = bounds_to_rect(control.bounds, state.dpi);
-        paint_proxy(canvas, theme, rect, control, font, state.dpi);
+        let rect = bounds_to_rect(control.bounds, dpi);
+        paint_proxy(canvas, theme, rect, control, font, dpi);
     }
 
     if let Some(index) = state.selected
         && let Some(control) = state.form.controls.get(index)
     {
-        paint_selection(
-            canvas,
-            theme,
-            bounds_to_rect(control.bounds, state.dpi),
-            state.dpi,
-        );
+        paint_selection(canvas, theme, bounds_to_rect(control.bounds, dpi), dpi);
     }
 }
 

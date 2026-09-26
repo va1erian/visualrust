@@ -250,6 +250,48 @@ fn invalid_enum_is_rejected_at_parse_time() {
 }
 
 #[test]
+fn anchor_tags_round_trip_and_keep_the_original_nine() {
+    let cases = [
+        ("top_left", Anchor::TopLeft),
+        ("top", Anchor::Top),
+        ("top_right", Anchor::TopRight),
+        ("left", Anchor::Left),
+        ("center", Anchor::Center),
+        ("right", Anchor::Right),
+        ("bottom_left", Anchor::BottomLeft),
+        ("bottom", Anchor::Bottom),
+        ("bottom_right", Anchor::BottomRight),
+        ("stretch_horizontal", Anchor::StretchHorizontal),
+        ("stretch_vertical", Anchor::StretchVertical),
+        ("fill", Anchor::Fill),
+    ];
+    for (tag, anchor) in cases {
+        let json = serde_json::to_string(&anchor).expect("serialize anchor");
+        assert_eq!(json, format!("\"{tag}\""));
+        assert_eq!(
+            serde_json::from_str::<Anchor>(&json).expect("parse anchor"),
+            anchor
+        );
+    }
+}
+
+#[test]
+fn a_manifest_written_before_stretch_anchors_still_parses() {
+    let text = r#"{
+        "name": "Main",
+        "size": { "width": 100.0, "height": 100.0 },
+        "controls": [{
+            "kind": { "type": "button" },
+            "name": "ok",
+            "bounds": { "x": 0.0, "y": 0.0, "width": 10.0, "height": 10.0 },
+            "anchor": "bottom_right"
+        }]
+    }"#;
+    let form = Form::from_json(text).expect("old manifest parses");
+    assert_eq!(form.controls[0].anchor, Anchor::BottomRight);
+}
+
+#[test]
 fn empty_form_name_is_reported() {
     let mut form = form_with(Vec::new());
     form.name = "  ".to_owned();

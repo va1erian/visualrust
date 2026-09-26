@@ -42,7 +42,7 @@ use std::rc::Rc;
 use xui::{AsControl, Control, Custom, Ui};
 
 use crate::error::ValidationError;
-use crate::model::{ControlKind, Dip, Form};
+use crate::model::{ControlKind, Dip, Form, Size};
 
 use widget::{DesignerState, DesignerWidget};
 
@@ -87,9 +87,14 @@ impl<M: 'static> FormDesigner<M> {
     /// Hosts `form` inside `ui`, snapping edits to `grid`.
     pub fn new(ui: &mut Ui<M>, form: Form, grid: Dip) -> Result<FormDesigner<M>, DesignerError> {
         form.validate()?;
-        let dpi = ui.dpi();
-        let state = Rc::new(RefCell::new(DesignerState::new(form, grid.get(), dpi)));
-        let widget = DesignerWidget::new(Rc::clone(&state));
+        let state = Rc::new(RefCell::new(DesignerState::new(form, grid.get())));
+        // The widget reads the DPI through this probe on every paint, so a
+        // monitor move is picked up without a second `FormDesigner::new`.
+        let dpi_probe: Rc<dyn Fn() -> u32> = {
+            let ui = ui.clone();
+            Rc::new(move || ui.dpi())
+        };
+        let widget = DesignerWidget::new(Rc::clone(&state), dpi_probe);
         let on_change: ChangeMapper<M> = Rc::new(RefCell::new(None));
         let mapper = Rc::clone(&on_change);
         let custom = Custom::new(ui, widget)?.on_event(move |event| {
@@ -133,6 +138,17 @@ impl<M: 'static> FormDesigner<M> {
     pub fn set_grid(&mut self, grid: Dip) {
         self.state.borrow_mut().grid = grid.get();
         self.custom.invalidate();
+    }
+
+    /// Anchors every control for a form resize to `new_size`, adopts the new
+    /// size and repaints.
+    ///
+    /// The hosting app calls this when its window's client area changes, so the
+    /// design preview matches what `apply_anchors` will do at run time.
+    pub fn resize_form(&mut self, new_size: Size) {
+        self.state.borrow_mut().resize_form(new_size);
+        self.custom.invalidate();
+        self.emit(DesignerEvent::FormEdited);
     }
 
     /// Selects `index` (or clears the selection) without a click.

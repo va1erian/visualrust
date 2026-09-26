@@ -10,9 +10,11 @@
 //! and non-UTF-8-safe name rules matter less here than a stable round trip.
 //! Field order is declaration order, so re-serializing is byte-stable.
 
+pub mod anchors;
 pub mod control;
 pub mod geometry;
 
+pub use anchors::{anchored, apply_anchors};
 pub use control::{
     CheckBoxProps, ChoiceProps, ColorPickerProps, Column, ComboBoxProps, Control, ControlKind,
     EditProps, FlowTextProps, ListProps, MenuItem, MenuProps, Orientation, PanelProps, RangeProps,

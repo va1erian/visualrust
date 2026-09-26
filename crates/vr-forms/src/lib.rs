@@ -18,4 +18,7 @@ mod tests;
 
 pub use design::{DesignPoint, DesignerError, DesignerEvent, FormDesigner, Handle, PropertyValue};
 pub use error::{FormError, ValidationError};
-pub use model::{Anchor, Bounds, Control, ControlKind, Dip, Form, Orientation, ScrollBars, Size};
+pub use model::{
+    Anchor, Bounds, Control, ControlKind, Dip, Form, Orientation, ScrollBars, Size, anchored,
+    apply_anchors,
+};
