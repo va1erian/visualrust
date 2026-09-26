@@ -24,16 +24,30 @@
 //! replace, and [`hash`] the md5/sha1/sha256 digests plus HMAC-SHA256. They
 //! follow the same rule as the string library: typed `thiserror` errors, no
 //! panics, and every fallible command surfaces as a Dyon runtime error.
+//!
+//! # Math
+//!
+//! [`math`] covers the PureBasic numeric commands: rounding, powers and roots,
+//! trigonometry, logarithms and a small deterministic PRNG. Dyon's only number
+//! type is `f64`, so every command takes and returns a float; the rounding
+//! table and the NaN/domain rules are documented on the module.
+//!
+//! ```dyon
+//! fn main() {
+//!     println(sqrt(pow(3, 2) + pow(4, 2))) // 5
+//! }
+//! ```
 
 #![forbid(unsafe_code)]
 
 pub mod encoding;
 pub mod error;
 pub mod hash;
+pub mod math;
 pub mod regex;
 pub mod strings;
 
 mod native;
 
-pub use error::{EncodingError, HashError, RegexError, StringError};
+pub use error::{EncodingError, HashError, MathError, RegexError, StringError};
 pub use native::register;

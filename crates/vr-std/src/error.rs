@@ -132,3 +132,20 @@ pub enum HashError {
     #[error("hmac_sha256: the key could not be used")]
     InvalidKey,
 }
+
+/// A math argument outside a function's real domain.
+///
+/// [`crate::math`] rejects `sqrt`/`ln` of a negative and `asin`/`acos` outside
+/// `[-1, 1]` instead of silently returning an IEEE NaN, so a script author gets
+/// the same typed failure they get from the string and encoding commands.
+#[derive(Debug, Error, Clone, PartialEq)]
+pub enum MathError {
+    /// The argument has no real result for this function.
+    #[error("{function}: {value} is outside the function's domain")]
+    Domain {
+        /// The Dyon command that rejected the argument.
+        function: &'static str,
+        /// The rejected value.
+        value: f64,
+    },
+}
