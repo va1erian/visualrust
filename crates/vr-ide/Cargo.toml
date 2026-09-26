@@ -16,6 +16,10 @@ vr-scintilla = { path = "../vr-scintilla" }
 # The startup document is the entry of the nearest `vrproj.toml`, so the IDE
 # reads the manifest rather than re-implementing the project model.
 vr-core.workspace = true
+# Design mode previews the selected form model and reads `.vrform` files through
+# the form crate rather than re-implementing the model. See src/designer.rs for
+# why the live DesignerSurface is not hosted in this shell.
+vr-forms = { path = "../vr-forms" }
 
 [build-dependencies]
 # Embeds the Common Controls v6 + DPI manifest into the binary and test

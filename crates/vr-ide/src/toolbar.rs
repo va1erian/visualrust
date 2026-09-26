@@ -45,6 +45,11 @@ pub(crate) fn items() -> Vec<ToolbarItem<Msg>> {
             .tooltip("Stop")
             .shortcut(Shortcut::shift(Key::F5))
             .on_click(|| Some(Msg::Stop)),
+        ToolbarItem::new("Design")
+            .with_icon(ToolbarIcon::Chevron)
+            .tooltip("Toggle design mode")
+            .shortcut(Shortcut::ctrl(Key::D))
+            .on_click(|| Some(Msg::ToggleDesign)),
         ToolbarItem::new("Theme")
             .with_icon(ToolbarIcon::Circle)
             .tooltip("Toggle light/dark")
@@ -60,6 +65,6 @@ mod tests {
     #[test]
     fn every_button_maps_to_a_message() {
         let items = items();
-        assert_eq!(items.len(), 8);
+        assert_eq!(items.len(), 9);
     }
 }

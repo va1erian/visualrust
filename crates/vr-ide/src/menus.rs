@@ -12,6 +12,8 @@ pub(crate) const DARK: &str = "theme_dark";
 pub(crate) const TOOLBAR: &str = "view_toolbar";
 /// Key of the "Status bar" checked item.
 pub(crate) const STATUS: &str = "view_status";
+/// Key of the "Design Mode" checked item.
+pub(crate) const DESIGN: &str = "view_design";
 
 /// Builds the File / Edit / View / Build / Run / Help menu bar.
 ///
@@ -66,6 +68,11 @@ fn view(state: &crate::IdeState) -> Menu<Msg> {
             Msg::ToggleStatusBar
         })
         .keyed(STATUS)
+        .separator()
+        .checked_item("&Design Mode", Shortcut::ctrl(Key::D), state.design, || {
+            Msg::ToggleDesign
+        })
+        .keyed(DESIGN)
         .separator()
         .item("Toggle &Theme", Shortcut::ctrl(Key::T), || Msg::ToggleTheme)
 }
