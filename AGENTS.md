@@ -4,7 +4,8 @@ VisualRust is a native Windows RAD IDE: built in Rust on
 [`xui`](https://github.com/va1erian/xui), apps are scripted in
 [Dyon](https://github.com/PistonDevelopers/dyon), and projects export to
 self-contained `.exe` files. Read `docs/PLAN.md` for the architecture and the
-milestone map.
+milestone map. New to the project? `docs/TUTORIAL.md` is a quick Dyon +
+VisualRust crash course.
 
 ## Environment
 

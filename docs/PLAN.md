@@ -4,6 +4,8 @@ A native Windows VB6/PureBasic-style RAD IDE written in Rust on `xui`,
 where apps are scripted in **Dyon** and exported to self-contained `.exe`
 files.
 
+New to the project? Start with [the quick tutorial](TUTORIAL.md).
+
 ## Locked decisions
 
 - **Export**: a prebuilt `vr-runtime.exe` stub plus an appended compressed
