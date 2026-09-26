@@ -18,7 +18,7 @@ mod error;
 mod golden;
 mod sys;
 
-pub use capture::{WindowSelector, capture_image, capture_window};
+pub use capture::{WindowSelector, capture_image, capture_window, capture_window_rendered};
 pub use error::{Result, ToolingError};
 pub use golden::{
     ACCEPT_ENV, Diff, GOLDEN_DIR_ENV, accept_golden, assert_matches_golden,

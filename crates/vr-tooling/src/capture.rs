@@ -79,6 +79,27 @@ pub fn capture_window(selector: WindowSelector, out_path: impl AsRef<Path>) -> R
     Ok(path)
 }
 
+/// Captures the selected window with the `PrintWindow` renderer only.
+///
+/// The composited backend is preferred for its DWM frame, but the pinned win32ui
+/// rev faults inside `Windows.Graphics.Capture` when the target belongs to
+/// another process, and a fault cannot be caught to reach the fallback. A caller
+/// that has launched the target itself (an exported app under test) uses this to
+/// get a rendering without risking the harness.
+pub fn capture_window_rendered(
+    selector: WindowSelector,
+    out_path: impl AsRef<Path>,
+) -> Result<PathBuf> {
+    let hwnd = resolve(&selector)?;
+    let image = crate::sys::print_window(hwnd).ok_or_else(|| ToolingError::CaptureFailed {
+        selector: selector.to_string(),
+        reason: "PrintWindow returned no image".to_owned(),
+    })?;
+    let path = out_path.as_ref().to_path_buf();
+    crate::golden::write_png(&image, &path)?;
+    Ok(path)
+}
+
 /// Resolves a selector to a live handle, erroring with a typed reason.
 fn resolve(selector: &WindowSelector) -> Result<Hwnd> {
     match selector {
