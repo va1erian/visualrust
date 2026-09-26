@@ -149,3 +149,73 @@ pub enum MathError {
         value: f64,
     },
 }
+
+/// A rejected date/time argument, format string or parsed field.
+///
+/// [`crate::datetime`] formats and parses UTC instants from an explicit value,
+/// so its failures are about the text and the instant rather than about the
+/// clock: an unknown `%` specifier, a format that does not match the text, or a
+/// field outside its real range. The timestamp bound exists because the civil
+/// calendar conversions are only exact for the documented `1..=9999` year
+/// range.
+#[derive(Debug, Error, Clone, PartialEq)]
+pub enum DateTimeError {
+    /// The format string ended with a `%` that introduced no specifier.
+    #[error("{function}: the format string ends with a bare '%'")]
+    DanglingPercent {
+        /// The Dyon command that rejected the argument.
+        function: &'static str,
+    },
+    /// The format string used a `%` specifier the library does not know.
+    #[error("{function}: '{specifier}' is not a known format specifier")]
+    UnknownSpecifier {
+        /// The Dyon command that rejected the argument.
+        function: &'static str,
+        /// The unrecognised specifier character.
+        specifier: char,
+    },
+    /// The text ran out or disagreed with the format at `position`.
+    #[error("{function}: the text does not match the format at character {position}")]
+    ParseMismatch {
+        /// The Dyon command that rejected the argument.
+        function: &'static str,
+        /// Character offset where the match failed.
+        position: usize,
+    },
+    /// The format omitted a date field that parsing requires.
+    #[error("{function}: the format is missing a '{field}' field")]
+    MissingField {
+        /// The Dyon command that rejected the argument.
+        function: &'static str,
+        /// The missing field name.
+        field: &'static str,
+    },
+    /// A parsed field was outside its real range.
+    #[error("{function}: {field} value {value} is out of range")]
+    FieldOutOfRange {
+        /// The Dyon command that rejected the argument.
+        function: &'static str,
+        /// The rejected field name.
+        field: &'static str,
+        /// The rejected value.
+        value: i64,
+    },
+    /// An instant cannot be represented by the supported calendar range.
+    #[error("{function}: timestamp {value} is outside the supported range")]
+    TimestampOutOfRange {
+        /// The Dyon command that rejected the argument.
+        function: &'static str,
+        /// The rejected whole-second UTC timestamp.
+        value: i64,
+    },
+    /// A numeric argument was not the expected kind of count.
+    #[error("{function}: {value} is not {expected}")]
+    InvalidArgument {
+        /// The Dyon command that rejected the argument.
+        function: &'static str,
+        /// The rejected value.
+        value: f64,
+        /// What the argument should have been.
+        expected: &'static str,
+    },
+}
