@@ -1337,8 +1337,9 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 [[package]]
 name = "xui"
 version = "0.1.0"
-source = "git+https://github.com/va1erian/xui?rev=cb0af9575186ab20f58d688654a7942cd096e87b#cb0af9575186ab20f58d688654a7942cd096e87b"
+source = "git+https://github.com/va1erian/xui?rev=ad227ffd9581d0ff87916688b1fb89ca3fccdf83#ad227ffd9581d0ff87916688b1fb89ca3fccdf83"
 dependencies = [
+ "embed-resource",
  "xui-core",
  "xui-win32",
 ]
@@ -1346,12 +1347,12 @@ dependencies = [
 [[package]]
 name = "xui-core"
 version = "0.1.0"
-source = "git+https://github.com/va1erian/xui?rev=cb0af9575186ab20f58d688654a7942cd096e87b#cb0af9575186ab20f58d688654a7942cd096e87b"
+source = "git+https://github.com/va1erian/xui?rev=ad227ffd9581d0ff87916688b1fb89ca3fccdf83#ad227ffd9581d0ff87916688b1fb89ca3fccdf83"
 
 [[package]]
 name = "xui-win32"
 version = "0.1.0"
-source = "git+https://github.com/va1erian/xui?rev=cb0af9575186ab20f58d688654a7942cd096e87b#cb0af9575186ab20f58d688654a7942cd096e87b"
+source = "git+https://github.com/va1erian/xui?rev=ad227ffd9581d0ff87916688b1fb89ca3fccdf83#ad227ffd9581d0ff87916688b1fb89ca3fccdf83"
 dependencies = [
  "embed-resource",
  "glow",

@@ -32,9 +32,10 @@ mod paint;
 mod props;
 mod units;
 mod widget;
-
+mod xui_anchor;
 pub use interact::{DesignPoint, Handle};
 pub use props::PropertyValue;
+pub use xui_anchor::to_xui as anchor_to_xui;
 
 use std::cell::RefCell;
 use std::rc::Rc;
