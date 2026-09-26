@@ -15,6 +15,9 @@ flate2.workspace = true
 sha2.workspace = true
 # Typed, `#[from]`-friendly errors per AGENTS.md.
 thiserror.workspace = true
+# The Win32 resource APIs behind `resources::patch_resources`; the unsafe calls
+# are confined to `src/sys/resources.rs`.
+windows.workspace = true
 
 [dev-dependencies]
 # Tests build bundles from the real manifest type, matching production shape.

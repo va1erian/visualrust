@@ -51,6 +51,17 @@ serde_json = "1"
 toml = "0.8"
 thiserror = "2"
 
+# PE resource patching (#53). `Begin/Update/EndUpdateResourceW` live in
+# Win32::System::LibraryLoader; HANDLE/HMODULE and FreeLibrary in
+# Win32::Foundation; the version.dll read-back used by vr-pack's test lives in
+# Win32::Storage::FileSystem. These are the only namespaces the resource work
+# needs, so no `Win32_UI_WindowsAndMessaging` (resource type ids are numeric).
+windows = { version = "0.62", default-features = false, features = [
+    "Win32_Foundation",
+    "Win32_System_LibraryLoader",
+    "Win32_Storage_FileSystem",
+] }
+
 # vr-std encoding/hashing deps. base64/percent-encoding cover the encoders,
 # regex the pattern commands, and the RustCrypto stack (md-5, sha1, sha2, hmac)
 # plus `hex` the digests; all are pure Rust so the Windows build stays clean.

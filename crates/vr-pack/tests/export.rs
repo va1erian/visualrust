@@ -6,10 +6,10 @@
 
 mod common;
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
-use common::TempDir;
+use common::{TempDir, runtime_stub};
 use vr_core::manifest::ProjectKind;
 use vr_core::project::{Project, ProjectOptions};
 use vr_pack::{Bundle, PackError, Stubs, export, export_with_stub};
@@ -101,7 +101,7 @@ fn export_copies_the_stub_and_appends_the_bundle() {
 
 #[test]
 fn exported_exe_runs_the_bundled_console_app() {
-    let Some(stub) = built_stub() else {
+    let Some(stub) = runtime_stub() else {
         eprintln!(
             "SKIP export e2e: no vr-runtime.exe found (build vr-runtime or set VR_RUNTIME_STUB)"
         );
@@ -150,26 +150,4 @@ fn exported_exe_runs_the_bundled_console_app() {
             eprintln!("SKIP export e2e: could not spawn the exported exe ({error})");
         }
     }
-}
-
-/// The runtime stub to export onto: an explicit `VR_RUNTIME_STUB`, else the
-/// debug/release `vr-runtime.exe` under the active target directory.
-fn built_stub() -> Option<PathBuf> {
-    if let Some(path) = std::env::var_os("VR_RUNTIME_STUB") {
-        let path = PathBuf::from(path);
-        return path.is_file().then_some(path);
-    }
-
-    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let target = std::env::var_os("CARGO_TARGET_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| manifest_dir.join("..").join("..").join("target"));
-
-    for profile in ["debug", "release"] {
-        let candidate = target.join(profile).join("vr-runtime.exe");
-        if candidate.is_file() {
-            return Some(candidate);
-        }
-    }
-    None
 }
