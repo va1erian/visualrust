@@ -50,6 +50,10 @@ pub struct IdeState {
     pub status_visible: bool,
     /// The text shown in the status bar's first part.
     pub status: String,
+    /// The name of the open document, when the editor has one.
+    pub document: Option<String>,
+    /// Whether the editor's text differs from the file on disk.
+    pub dirty: bool,
     /// Whether the (future) project runner is active.
     pub running: bool,
 }
@@ -61,6 +65,8 @@ impl Default for IdeState {
             toolbar_visible: true,
             status_visible: true,
             status: "Ready".to_owned(),
+            document: None,
+            dirty: false,
             running: false,
         }
     }
@@ -83,6 +89,10 @@ impl IdeState {
             Msg::NewProject => self.status("New project"),
             Msg::OpenProject => self.status("Open project"),
             Msg::Save => self.status("Saved"),
+            Msg::Reload => self.status("Reloaded"),
+            // The dirty flag is recomputed from the live control and baseline in
+            // `IdeApp::update`; the reducer only asks for a status-bar refresh.
+            Msg::DocumentChanged => {}
             Msg::Undo => self.status("Undo"),
             Msg::Redo => self.status("Redo"),
             Msg::Cut => self.status("Cut"),
@@ -128,6 +138,8 @@ impl IdeState {
             Msg::NewProject
                 | Msg::OpenProject
                 | Msg::Save
+                | Msg::Reload
+                | Msg::DocumentChanged
                 | Msg::Undo
                 | Msg::Redo
                 | Msg::Cut
@@ -144,6 +156,34 @@ impl IdeState {
                 | Msg::About
         );
         effect
+    }
+
+    /// Records the open document's name for the status line.
+    pub fn set_document(&mut self, name: impl Into<String>) {
+        self.document = Some(name.into());
+    }
+
+    /// Sets whether the editor has unsaved changes.
+    pub fn set_dirty(&mut self, dirty: bool) {
+        self.dirty = dirty;
+    }
+
+    /// Overrides the status message, e.g. with the outcome of a save.
+    pub fn set_status(&mut self, text: &str) {
+        self.status(text);
+    }
+
+    /// The full status-bar line: a dirty marker and the document name, then the
+    /// last message. Falls back to the bare message when no document is open.
+    pub fn status_line(&self) -> String {
+        match &self.document {
+            Some(name) => format!(
+                "{} {name}  |  {}",
+                if self.dirty { "[*]" } else { "[ ]" },
+                self.status
+            ),
+            None => self.status.clone(),
+        }
     }
 
     /// Sets the palette, returning whether it changed; the status line follows.
@@ -193,6 +233,25 @@ mod tests {
         let effect = state.apply(&Msg::About);
         assert!(!effect.quit && !effect.layout_changed && !effect.theme_changed);
         assert!(effect.status_changed);
+    }
+
+    #[test]
+    fn status_line_reflects_the_dirty_flag() {
+        let mut state = IdeState::default();
+        assert_eq!(state.status_line(), "Ready");
+        state.set_document("main.dyon");
+        let clean = state.status_line();
+        assert!(clean.contains("main.dyon") && clean.contains("[ ]"));
+        state.set_dirty(true);
+        assert!(state.status_line().contains("[*]"));
+    }
+
+    #[test]
+    fn a_document_change_asks_for_a_status_refresh() {
+        let mut state = IdeState::default();
+        let effect = state.apply(&Msg::DocumentChanged);
+        assert!(effect.status_changed);
+        assert!(!effect.quit && !effect.layout_changed && !effect.theme_changed);
     }
 
     #[test]

@@ -2,8 +2,10 @@
 //!
 //! This crate builds the IDE's main window as a `xui::App`: a light/dark
 //! themed window with a File / Edit / View / Build / Run / Help menu bar, a
-//! toolbar and a status bar. It is the frame the editor, forms designer and
-//! other panes land in over M1–M3; for now the centre is a placeholder.
+//! toolbar, an editor pane and a status bar. The editor pane hosts the real
+//! Scintilla control from `vr-scintilla`, showing a Dyon document with syntax
+//! highlighting and line numbers; the forms designer and other panes land in
+//! the same frame over M3.
 //!
 //! ## View model
 //!
@@ -32,11 +34,14 @@
 //! `tests/smoke.rs` integration test uses: it runs the binary, captures the
 //! live window with `vr-tooling`, and reports the PNG path and size (or skips
 //! when the session has no desktop). `xui_DEMO_THEME=light|dark` picks the
-//! starting palette.
+//! starting palette. `tests/editor_capture.rs` calls [`run_with`] with a
+//! `.dyon` file, waits for the container lexer to style it, and captures the
+//! pane; it asserts several of the Dyon palette colours are present.
 
 #![forbid(unsafe_code)]
 
 mod app;
+mod document;
 mod menus;
 mod msg;
 mod state;
@@ -45,6 +50,8 @@ mod toolbar;
 pub use app::{IdeApp, TITLE};
 pub use msg::Msg;
 pub use state::{Effect, IdeState};
+
+use std::path::PathBuf;
 
 use xui::{WindowSpec, dip};
 
@@ -57,8 +64,20 @@ pub enum IdeError {
 }
 
 /// Creates the shell's window and runs its message loop until it closes.
+///
+/// The first non-flag command-line argument is opened in the editor:
+/// `cargo run -p vr-ide -- path/to/file.dyon`. Without one the IDE falls back to
+/// the nearest project's manifest entry and then to the bundled sample.
 pub fn run() -> Result<(), IdeError> {
-    xui::run_app(spec(), IdeApp::build)?;
+    let path = document::path_from_args(std::env::args().skip(1));
+    run_with(path)
+}
+
+/// Like [`run`], but opens `path` instead of reading the command line, so an
+/// integration test can drive the editor pane with a known document.
+pub fn run_with(path: Option<PathBuf>) -> Result<(), IdeError> {
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    xui::run_app(spec(), move |ui| IdeApp::build(ui, path, cwd))?;
     Ok(())
 }
 

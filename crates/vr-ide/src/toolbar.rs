@@ -25,6 +25,11 @@ pub(crate) fn items() -> Vec<ToolbarItem<Msg>> {
             .tooltip("Save")
             .shortcut(Shortcut::ctrl(Key::S))
             .on_click(|| Some(Msg::Save)),
+        ToolbarItem::new("Reload")
+            .with_icon(ToolbarIcon::Arrow)
+            .tooltip("Reload from disk")
+            .shortcut(Shortcut::ctrl(Key::R))
+            .on_click(|| Some(Msg::Reload)),
         ToolbarItem::new("Build")
             .with_icon(ToolbarIcon::Chevron)
             .tooltip("Build project")
@@ -55,6 +60,6 @@ mod tests {
     #[test]
     fn every_button_maps_to_a_message() {
         let items = items();
-        assert_eq!(items.len(), 7);
+        assert_eq!(items.len(), 8);
     }
 }

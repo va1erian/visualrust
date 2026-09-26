@@ -36,6 +36,7 @@ fn file() -> Menu<Msg> {
             Msg::OpenProject
         })
         .item("&Save", Shortcut::ctrl(Key::S), || Msg::Save)
+        .item("&Reload", Shortcut::ctrl(Key::R), || Msg::Reload)
         .separator()
         .item("E&xit", Shortcut::ctrl(Key::Q), || Msg::Exit)
 }
