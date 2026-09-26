@@ -10,6 +10,7 @@ use dyon::Module;
 
 mod encoding;
 mod hash;
+mod math;
 mod regex;
 mod strings;
 
@@ -22,4 +23,5 @@ pub fn register(module: &mut Module) {
     encoding::register(module);
     regex::register(module);
     hash::register(module);
+    math::register(module);
 }
