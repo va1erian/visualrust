@@ -20,7 +20,7 @@ mod paint;
 pub use hosted::is_portable;
 pub use interact::{DesignPoint, Handle};
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use xui::Rect;
@@ -60,6 +60,10 @@ pub enum SurfaceEvent {
 /// Maps a surface event to the app's message.
 type ChangeMapper<M> = Rc<RefCell<Option<Box<dyn Fn(SurfaceEvent) -> Option<M>>>>>;
 
+/// The device-pixel origin a node's events are local to; shared so [`relayout`]
+/// keeps it current as the node moves.
+type NodeOffset = Rc<Cell<(i32, i32)>>;
+
 /// A drag in progress.
 enum Drag {
     Move { start: DesignPoint, origin: Bounds },
@@ -77,6 +81,10 @@ struct DesignerState<M: 'static> {
     widgets: Vec<Hosted<M>>,
     /// Per control, whether it paints as a placeholder rather than a widget.
     placeholders: Vec<bool>,
+    /// Per hosted node, the device-pixel origin its events are local to, kept
+    /// current by [`relayout`] so a click maps back to form space even as the
+    /// node moves under the pointer.
+    node_cells: Vec<Vec<NodeOffset>>,
     surface: WidgetId,
     min_size: f64,
 }
@@ -111,6 +119,7 @@ impl<M: 'static> DesignerSurface<M> {
             drag: None,
             widgets: Vec::new(),
             placeholders: Vec::new(),
+            node_cells: Vec::new(),
             surface,
             min_size: MIN_SIZE_DIP,
         }));
@@ -134,7 +143,8 @@ impl<M: 'static> DesignerSurface<M> {
         }
 
         let on_change: ChangeMapper<M> = Rc::new(RefCell::new(None));
-        install_handler(ui, surface, &state, &on_change);
+        // The surface sits at the form origin, so its own events need no shift.
+        install_handler(ui, surface, &state, &on_change, Rc::new(Cell::new((0, 0))));
 
         let mut surface = DesignerSurface {
             ui: ui.clone(),
@@ -160,6 +170,7 @@ impl<M: 'static> DesignerSurface<M> {
             state.drag = None;
             // Dropping the old widgets destroys their nodes.
             state.widgets.clear();
+            state.node_cells.clear();
         }
         self.rebuild()
     }
@@ -212,6 +223,7 @@ impl<M: 'static> DesignerSurface<M> {
         let dpi = self.state.borrow().dpi;
         let mut widgets = Vec::with_capacity(controls.len());
         let mut placeholders = Vec::with_capacity(controls.len());
+        let mut node_cells = Vec::with_capacity(controls.len());
         for control in &controls {
             let bounds = convert::bounds_to_rect(control.bounds, dpi);
             // A kind the backend cannot host — the native `Edit` on a machine
@@ -220,24 +232,39 @@ impl<M: 'static> DesignerSurface<M> {
             // its manipulation still work; only the live widget is missing.
             let widget = Hosted::create(&self.ui, control, bounds).unwrap_or(Hosted::Placeholder);
             placeholders.push(matches!(widget, Hosted::Placeholder));
+            node_cells.push(
+                widget
+                    .ids()
+                    .iter()
+                    .map(|_| Rc::new(Cell::new((0, 0))))
+                    .collect(),
+            );
             widgets.push(widget);
         }
         {
             let mut state = self.state.borrow_mut();
             state.widgets = widgets;
             state.placeholders = placeholders;
+            state.node_cells = node_cells;
         }
-        let ids: Vec<WidgetId> = self
-            .state
-            .borrow()
-            .widgets
-            .iter()
-            .flat_map(Hosted::ids)
-            .collect();
-        for id in ids {
-            install_handler(&self.ui, id, &self.state, &self.on_change);
-        }
+        // Position first: the handlers read the offset each node's events are
+        // local to, so `relayout` must have filled it in.
         relayout(&self.state, &self.ui);
+        let nodes: Vec<(WidgetId, NodeOffset)> = {
+            let state = self.state.borrow();
+            let mut nodes = Vec::new();
+            for (index, widget) in state.widgets.iter().enumerate() {
+                for (row, id) in widget.ids().into_iter().enumerate() {
+                    if let Some(cell) = state.node_cells.get(index).and_then(|rows| rows.get(row)) {
+                        nodes.push((id, Rc::clone(cell)));
+                    }
+                }
+            }
+            nodes
+        };
+        for (id, offset) in nodes {
+            install_handler(&self.ui, id, &self.state, &self.on_change, offset);
+        }
         Ok(())
     }
 }
@@ -248,12 +275,17 @@ fn install_handler<M: 'static>(
     id: WidgetId,
     state: &Rc<RefCell<DesignerState<M>>>,
     on_change: &ChangeMapper<M>,
+    offset: NodeOffset,
 ) {
     let state = Rc::clone(state);
     let on_change = Rc::clone(on_change);
     let inner = ui.clone();
     ui.register_events(id, move |event| {
-        let change = handle_event(&state, &inner, event);
+        // A painted widget's events carry coordinates local to its own window,
+        // so a click on a hosted control is moved into form space before it is
+        // hit-tested. The offset tracks the node as a drag moves it.
+        let (dx, dy) = offset.get();
+        let change = handle_event(&state, &inner, event, (dx, dy));
         change.and_then(|change| {
             on_change
                 .borrow()
@@ -268,10 +300,11 @@ fn handle_event<M: 'static>(
     state: &Rc<RefCell<DesignerState<M>>>,
     ui: &Ui<M>,
     event: &Event,
+    offset: (i32, i32),
 ) -> Option<SurfaceEvent> {
     let change = {
         let mut state = state.borrow_mut();
-        on_input(&mut state, event)
+        on_input(&mut state, event, offset)
     };
     if change.is_some() {
         relayout(state, ui);
@@ -280,7 +313,11 @@ fn handle_event<M: 'static>(
 }
 
 /// The pure input-to-model step, kept separate so the borrow is scoped.
-fn on_input<M: 'static>(state: &mut DesignerState<M>, event: &Event) -> Option<SurfaceEvent> {
+fn on_input<M: 'static>(
+    state: &mut DesignerState<M>,
+    event: &Event,
+    offset: (i32, i32),
+) -> Option<SurfaceEvent> {
     match *event {
         Event::MouseDown {
             x,
@@ -288,7 +325,7 @@ fn on_input<M: 'static>(state: &mut DesignerState<M>, event: &Event) -> Option<S
             button: MouseButton::Left,
             ..
         } => {
-            let point = point_at(x, y, state.dpi);
+            let point = form_point(x, y, offset, state.dpi);
             if let Some(index) = state.selected
                 && let Some(control) = state.form.controls.get(index)
                 && let Some(handle) = interact::handle_at(control.bounds, point, HANDLE_REACH_DIP)
@@ -308,7 +345,7 @@ fn on_input<M: 'static>(state: &mut DesignerState<M>, event: &Event) -> Option<S
             Some(SurfaceEvent::SelectionChanged(hit))
         }
         Event::MouseMove { x, y, .. } => {
-            let point = point_at(x, y, state.dpi);
+            let point = form_point(x, y, offset, state.dpi);
             let index = state.selected?;
             match state.drag {
                 Some(Drag::Move { start, origin }) => {
@@ -358,6 +395,7 @@ fn key_input<M: 'static>(state: &mut DesignerState<M>, key: Key) -> Option<Surfa
                 // Dropping the widget destroys its node.
                 state.widgets.remove(index);
                 state.placeholders.remove(index);
+                state.node_cells.remove(index);
             }
             state.selected = None;
             state.drag = None;
@@ -376,6 +414,12 @@ fn point_at(x: i32, y: i32, dpi: u32) -> DesignPoint {
     DesignPoint::new(convert::px_to_dip(x, dpi), convert::px_to_dip(y, dpi))
 }
 
+/// A point in a node's local client pixels, moved into form space by the node's
+/// device-pixel origin, then into design units.
+fn form_point(x: i32, y: i32, offset: (i32, i32), dpi: u32) -> DesignPoint {
+    point_at(x + offset.0, y + offset.1, dpi)
+}
+
 /// Moves every hosted node to its control's current bounds and repaints.
 fn relayout<M: 'static>(state: &Rc<RefCell<DesignerState<M>>>, ui: &Ui<M>) {
     let state = state.borrow();
@@ -386,10 +430,35 @@ fn relayout<M: 'static>(state: &Rc<RefCell<DesignerState<M>>>, ui: &Ui<M>) {
         };
         let bounds = convert::bounds_to_rect(control.bounds, state.dpi);
         let rects = widget.layout(bounds, state.dpi);
-        for (id, rect) in widget.ids().into_iter().zip(rects) {
+        for (row, (id, rect)) in widget.ids().into_iter().zip(rects).enumerate() {
+            // Keep the offset the node's events are local to in step with the
+            // move, so a drag stays correct as the node follows the pointer.
+            if let Some(cell) = state.node_cells.get(index).and_then(|rows| rows.get(row)) {
+                cell.set((rect.left, rect.top));
+            }
             moves.push((id, rect));
         }
     }
     ui.apply_moves(&moves);
     ui.invalidate(state.surface);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_node_local_point_is_moved_into_form_space() {
+        // At 96 dpi one pixel is one design unit, so the node's origin is a
+        // direct offset.
+        assert_eq!(
+            form_point(5, 7, (100, 50), 96),
+            DesignPoint::new(105.0, 57.0)
+        );
+    }
+
+    #[test]
+    fn the_surface_offset_leaves_the_point_unchanged() {
+        assert_eq!(form_point(5, 7, (0, 0), 96), DesignPoint::new(5.0, 7.0));
+    }
 }
