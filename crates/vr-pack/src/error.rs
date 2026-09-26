@@ -94,4 +94,37 @@ pub enum PackError {
         #[source]
         source: io::Error,
     },
+
+    /// The "build as a Rust project" target already holds a `Cargo.toml`;
+    /// emitting would clobber a hand-edited build file, so the caller must pick
+    /// a fresh directory rather than lose their dependencies.
+    #[error("rust project target `{}` already contains a Cargo.toml", path.display())]
+    RustProjectExists { path: PathBuf },
+
+    /// Writing a generated project file failed (permissions, disk full, ...).
+    #[error("could not write generated rust project file `{}`: {source}", path.display())]
+    RustProjectWrite {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
+
+    /// `cargo build` was requested but no `cargo` is on `PATH`; the toolchain is
+    /// the one prerequisite this mode cannot satisfy on its own.
+    #[error("cargo build requested but `cargo` is not on PATH")]
+    CargoUnavailable,
+
+    /// Spawning cargo itself failed, usually a PATH or permission problem rather
+    /// than a compile error.
+    #[error("could not run `cargo build` in `{}`: {source}", root.display())]
+    CargoSpawn {
+        root: PathBuf,
+        #[source]
+        source: io::Error,
+    },
+
+    /// Cargo ran and the crate did not compile; the captured stderr carries the
+    /// actual diagnostic for the output pane.
+    #[error("`cargo build` failed in `{}`: {stderr}", root.display())]
+    CargoBuildFailed { root: PathBuf, stderr: String },
 }
