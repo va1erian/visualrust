@@ -235,7 +235,10 @@ fn sample_form() -> Form {
 #[test]
 fn golden_matches_all_kinds_output() {
     let generated = generate(&sample_form(), CodegenOptions::default());
-    assert_eq!(generated, include_str!("golden/all_kinds.dyon"));
+    // The generator always emits LF; a Windows checkout may hand `include_str!`
+    // the golden file as CRLF, so normalise before comparing.
+    let golden = include_str!("golden/all_kinds.dyon").replace("\r\n", "\n");
+    assert_eq!(generated, golden);
 }
 
 #[test]
