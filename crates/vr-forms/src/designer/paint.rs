@@ -52,6 +52,11 @@ pub fn paint_surface(
 
 /// Draws a grid line every `grid` design units.
 fn paint_grid(canvas: &mut dyn Canvas, theme: &Theme, bounds: Rect, grid: f64, dpi: u32) {
+    // `grid <= 0` disables snapping; drawing at a minimum 1px step would then
+    // fill the surface and cost a draw call per row and column.
+    if grid <= 0.0 {
+        return;
+    }
     let step = dip_to_px(grid, dpi).max(1);
     let mut x = bounds.left;
     while x < bounds.right {
