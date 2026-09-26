@@ -1,11 +1,16 @@
 //! The VisualRust IDE shell.
 //!
-//! This crate builds the IDE's main window as a `xui::App`: a light/dark
-//! themed window with a File / Edit / View / Build / Run / Help menu bar, a
-//! toolbar, an editor pane and a status bar. The editor pane hosts the real
-//! Scintilla control from `vr-scintilla`, showing a Dyon document with syntax
-//! highlighting and line numbers; the forms designer and other panes land in
-//! the same frame over M3.
+//! This crate builds the IDE prototype's main window as a `xui::App`: a
+//! light/dark themed window with a File / Edit / View / Build / Run / Help menu
+//! bar, a toolbar, a project explorer, a central pane and an output pane, all
+//! over a status bar. The central pane is the real Scintilla editor from
+//! `vr-scintilla` by default and a form pane in design mode.
+//!
+//! Design mode is a **mode**, not a tab: the live `vr_forms::DesignerSurface`
+//! turns on `Ui::set_design_mode(true)` for the whole window, so it cannot sit
+//! beside an editable editor. See [`designer`] for why this shell renders the
+//! form model rather than hosting the surface: the surface targets xui's
+//! portable core app, whose `Ui` type differs from the native shell's.
 //!
 //! ## View model
 //!
@@ -41,9 +46,13 @@
 #![forbid(unsafe_code)]
 
 mod app;
+mod designer;
 mod document;
+mod explorer;
+mod layout;
 mod menus;
 mod msg;
+mod output;
 mod state;
 mod toolbar;
 

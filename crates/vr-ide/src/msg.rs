@@ -14,6 +14,14 @@ pub enum Msg {
     NewProject,
     /// Open an existing project.
     OpenProject,
+    /// A project explorer item was selected, by its index in the flat list.
+    SelectExplorer(usize),
+    /// Enter or leave the form-design mode.
+    ToggleDesign,
+    /// The hosted designer selected a control.
+    DesignSelection(Option<usize>),
+    /// The hosted designer edited the form's controls or bounds.
+    DesignEdited,
     /// Save the active document.
     Save,
     /// Reload the active document from disk.

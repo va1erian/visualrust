@@ -7,7 +7,8 @@
 //!         |  Msg
 //!         v
 //!   IdeState::apply     pure reducer, no xui types
-//!         |  Effect { quit, theme_changed, layout_changed, status_changed }
+//!         |  Effect { quit, theme_changed, layout_changed, status_changed,
+//!         |            design_changed, output_changed }
 //!         v
 //!   IdeApp::update      the only code that touches the live window
 //! ```
@@ -21,6 +22,7 @@
 //! [`Msg`]: crate::Msg
 
 use crate::Msg;
+use crate::explorer::{ExplorerItem, ItemKind};
 
 /// What the window must re-apply after the reducer ran.
 ///
@@ -37,6 +39,10 @@ pub struct Effect {
     pub layout_changed: bool,
     /// Refresh the status bar text.
     pub status_changed: bool,
+    /// Enter or leave design mode; the central pane must be rebuilt.
+    pub design_changed: bool,
+    /// Refresh the output pane text.
+    pub output_changed: bool,
 }
 
 /// The shell's state, independent of any window.
@@ -56,6 +62,16 @@ pub struct IdeState {
     pub dirty: bool,
     /// Whether the (future) project runner is active.
     pub running: bool,
+    /// The loaded project's name, when one was resolved.
+    pub project: Option<String>,
+    /// Every explorer row, indexed the same way the `TreeView` keys them.
+    pub items: Vec<ExplorerItem>,
+    /// The selected explorer row.
+    pub selected: Option<usize>,
+    /// Whether the central pane shows the form designer instead of the editor.
+    pub design: bool,
+    /// The output pane's log, oldest first.
+    pub output: Vec<String>,
 }
 
 impl Default for IdeState {
@@ -68,6 +84,11 @@ impl Default for IdeState {
             document: None,
             dirty: false,
             running: false,
+            project: None,
+            items: Vec::new(),
+            selected: None,
+            design: false,
+            output: Vec::new(),
         }
     }
 }
@@ -86,18 +107,90 @@ impl IdeState {
         let mut effect = Effect::default();
         match msg {
             Msg::Exit | Msg::AutoClose => effect.quit = true,
-            Msg::NewProject => self.status("New project"),
-            Msg::OpenProject => self.status("Open project"),
-            Msg::Save => self.status("Saved"),
-            Msg::Reload => self.status("Reloaded"),
+            Msg::NewProject => {
+                self.status("New project (stub)");
+                self.push_output("New Project is not implemented in this prototype");
+                effect.status_changed = true;
+                effect.output_changed = true;
+            }
+            Msg::OpenProject => {
+                self.status("Open Project");
+                self.push_output("Open Project: launch the IDE with a project directory");
+                effect.status_changed = true;
+                effect.output_changed = true;
+            }
+            Msg::SelectExplorer(index) => {
+                if let Some(item) = self.items.get(*index).cloned() {
+                    self.selected = Some(*index);
+                    let kind = item.kind;
+                    let name = item.name.clone();
+                    match kind {
+                        ItemKind::Form => {
+                            self.design = true;
+                            self.status(&format!("Design: {name}"));
+                        }
+                        ItemKind::Source => {
+                            self.design = false;
+                            self.status(&format!("Edit: {name}"));
+                        }
+                    }
+                    effect.status_changed = true;
+                    effect.design_changed = true;
+                }
+            }
+            Msg::ToggleDesign => {
+                self.design = !self.design;
+                self.status(if self.design {
+                    "Design mode on"
+                } else {
+                    "Design mode off"
+                });
+                effect.status_changed = true;
+                effect.design_changed = true;
+            }
+            Msg::DesignSelection(selected) => {
+                let line = match selected {
+                    Some(index) => format!("Selected control {index}"),
+                    None => "Cleared the selection".to_owned(),
+                };
+                self.push_output(&line);
+                effect.output_changed = true;
+            }
+            Msg::DesignEdited => {
+                self.push_output("Form edited");
+                effect.output_changed = true;
+            }
+            Msg::Save => {
+                self.status("Saved");
+                effect.status_changed = true;
+            }
+            Msg::Reload => {
+                self.status("Reloaded");
+                effect.status_changed = true;
+            }
             // The dirty flag is recomputed from the live control and baseline in
             // `IdeApp::update`; the reducer only asks for a status-bar refresh.
-            Msg::DocumentChanged => {}
-            Msg::Undo => self.status("Undo"),
-            Msg::Redo => self.status("Redo"),
-            Msg::Cut => self.status("Cut"),
-            Msg::Copy => self.status("Copy"),
-            Msg::Paste => self.status("Paste"),
+            Msg::DocumentChanged => effect.status_changed = true,
+            Msg::Undo => {
+                self.status("Undo");
+                effect.status_changed = true;
+            }
+            Msg::Redo => {
+                self.status("Redo");
+                effect.status_changed = true;
+            }
+            Msg::Cut => {
+                self.status("Cut");
+                effect.status_changed = true;
+            }
+            Msg::Copy => {
+                self.status("Copy");
+                effect.status_changed = true;
+            }
+            Msg::Paste => {
+                self.status("Paste");
+                effect.status_changed = true;
+            }
             Msg::ToggleToolbar => {
                 self.toolbar_visible = !self.toolbar_visible;
                 effect.layout_changed = true;
@@ -106,6 +199,7 @@ impl IdeState {
                 } else {
                     "Toolbar hidden"
                 });
+                effect.status_changed = true;
             }
             Msg::ToggleStatusBar => {
                 self.status_visible = !self.status_visible;
@@ -115,47 +209,48 @@ impl IdeState {
                 } else {
                     "Status bar hidden"
                 });
+                effect.status_changed = true;
             }
             Msg::LightTheme => effect.theme_changed = self.set_dark(false),
             Msg::DarkTheme => effect.theme_changed = self.set_dark(true),
             Msg::ToggleTheme => effect.theme_changed = self.set_dark(!self.dark),
             Msg::Build => {
                 self.running = false;
-                self.status("Build requested");
+                self.status("Build requested (stub)");
+                self.push_output("Build requested (stub)");
+                effect.status_changed = true;
+                effect.output_changed = true;
             }
             Msg::Run => {
                 self.running = true;
-                self.status("Running");
+                self.status("Running (stub)");
+                self.push_output("Run requested (stub)");
+                effect.status_changed = true;
+                effect.output_changed = true;
             }
             Msg::Stop => {
                 self.running = false;
                 self.status("Stopped");
+                self.push_output("Stop requested");
+                effect.status_changed = true;
+                effect.output_changed = true;
             }
-            Msg::About => self.status("VisualRust IDE — M1 shell"),
+            Msg::About => {
+                self.status("VisualRust IDE — prototype");
+                effect.status_changed = true;
+            }
         }
-        effect.status_changed = matches!(
-            msg,
-            Msg::NewProject
-                | Msg::OpenProject
-                | Msg::Save
-                | Msg::Reload
-                | Msg::DocumentChanged
-                | Msg::Undo
-                | Msg::Redo
-                | Msg::Cut
-                | Msg::Copy
-                | Msg::Paste
-                | Msg::ToggleToolbar
-                | Msg::ToggleStatusBar
-                | Msg::LightTheme
-                | Msg::DarkTheme
-                | Msg::ToggleTheme
-                | Msg::Build
-                | Msg::Run
-                | Msg::Stop
-                | Msg::About
-        );
         effect
+    }
+
+    /// Records the loaded project's name for the status line and output.
+    pub fn set_project(&mut self, name: impl Into<String>) {
+        self.project = Some(name.into());
+    }
+
+    /// Replaces the explorer rows.
+    pub fn set_items(&mut self, items: Vec<ExplorerItem>) {
+        self.items = items;
     }
 
     /// Records the open document's name for the status line.
@@ -171,6 +266,16 @@ impl IdeState {
     /// Overrides the status message, e.g. with the outcome of a save.
     pub fn set_status(&mut self, text: &str) {
         self.status(text);
+    }
+
+    /// Appends one line to the output log.
+    pub fn push_output(&mut self, line: &str) {
+        self.output.push(line.to_owned());
+    }
+
+    /// The whole output log, one entry per line.
+    pub fn output_text(&self) -> String {
+        self.output.join("\r\n")
     }
 
     /// The full status-bar line: a dirty marker and the document name, then the
@@ -202,6 +307,15 @@ impl IdeState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
+
+    fn item(name: &str, kind: ItemKind) -> ExplorerItem {
+        ExplorerItem {
+            name: name.to_owned(),
+            path: Some(PathBuf::from(name)),
+            kind,
+        }
+    }
 
     #[test]
     fn toggling_the_theme_flips_dark_once() {
@@ -262,5 +376,38 @@ mod tests {
         assert!(state.running);
         let _ = state.apply(&Msg::Stop);
         assert!(!state.running);
+    }
+
+    #[test]
+    fn selecting_a_form_enters_design_and_a_source_leaves_it() {
+        let mut state = IdeState::default();
+        state.set_items(vec![
+            item("app.vrform", ItemKind::Form),
+            item("main.dyon", ItemKind::Source),
+        ]);
+        let effect = state.apply(&Msg::SelectExplorer(0));
+        assert!(state.design && effect.design_changed);
+        let effect = state.apply(&Msg::SelectExplorer(1));
+        assert!(!state.design && effect.design_changed);
+        // An out-of-range index changes nothing.
+        let effect = state.apply(&Msg::SelectExplorer(9));
+        assert!(!effect.design_changed && !effect.status_changed);
+    }
+
+    #[test]
+    fn toggle_design_flips_the_flag_and_reports_it() {
+        let mut state = IdeState::default();
+        let effect = state.apply(&Msg::ToggleDesign);
+        assert!(state.design && effect.design_changed);
+        let effect = state.apply(&Msg::ToggleDesign);
+        assert!(!state.design && effect.design_changed);
+    }
+
+    #[test]
+    fn run_appends_to_the_output_log() {
+        let mut state = IdeState::default();
+        let effect = state.apply(&Msg::Run);
+        assert!(effect.output_changed);
+        assert!(state.output_text().contains("Run requested"));
     }
 }
