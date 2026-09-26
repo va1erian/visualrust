@@ -11,3 +11,10 @@ repository.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+# The portable widget layer and its Win32 backend: the designer hosts real xui
+# widgets, not hand-drawn stand-ins. Pinned by rev in the workspace.
+xui.workspace = true
+
+[dev-dependencies]
+# The capture helper the screenshot test drives; only the test needs it.
+vr-tooling = { path = "../vr-tooling" }

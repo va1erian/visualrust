@@ -929,6 +929,8 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "vr-tooling",
+ "xui",
 ]
 
 [[package]]
